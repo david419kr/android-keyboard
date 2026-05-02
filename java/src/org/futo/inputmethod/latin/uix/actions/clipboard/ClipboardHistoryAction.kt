@@ -28,7 +28,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -66,9 +65,11 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.lifecycle.LifecycleCoroutineScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -470,7 +471,8 @@ class ClipboardHistoryManager(val context: Context, val coroutineScope: Lifecycl
     val atomicClipboardFile = AtomicFile(clipboardFile)
 
     // Backup in case primary gets corrupted somehow
-    val clipboardFileBak = File(context.filesDir, "$ClipboardFileName.bak")
+    val clipboardFileBak = File(context.filesDir, "$ClipboardFileName.backup")
+    val clipboardFileBakLegacy = File(context.filesDir, "$ClipboardFileName.bak")
 
     // Temporary file used during saving, after writing we delete previous backup, move primary to backup, move swap to primary
     val clipboardFileSwap = File(context.filesDir, "$ClipboardFileName.swap")
@@ -655,6 +657,7 @@ class ClipboardHistoryManager(val context: Context, val coroutineScope: Lifecycl
     }
 
     private suspend fun onClipboardImported(file: File) {
+        migrateLegacyClipboardBak()
         val data = decodeFile(file).map {
             // Restore all saved items
             it.copy(timestamp = System.currentTimeMillis())
@@ -734,6 +737,12 @@ class ClipboardHistoryManager(val context: Context, val coroutineScope: Lifecycl
         }
     }
 
+    private fun migrateLegacyClipboardBak() {
+        // AtomicFile interprets a (filename + ".bak") file entirely differently, we
+        // need to make sure it's gone before any AtomicFile operations.
+        if(clipboardFileBakLegacy.exists()) { clipboardFileBakLegacy.renameTo(clipboardFileBak) }
+    }
+
     var saveClipboardLoadJob: Job? = null
     var lastClipboardWritten: List<ClipboardEntry>? = null
     internal fun saveClipboard(): Job? {
@@ -767,36 +776,45 @@ class ClipboardHistoryManager(val context: Context, val coroutineScope: Lifecycl
                 val shouldBackup = (System.currentTimeMillis() - context.getSetting(ClipboardLastBackup)) > 1000L * 60L * 60L * 24L * 1L
                 var backupSucceeded = false
 
-                synchronized(atomicClipboardFile) {
-                    // Produce a backup
-                    if (clipboardFile.exists() && shouldBackup) {
-                        val existingData = atomicClipboardFile.readFully()
 
-                        val isValid = try { decodeData(existingData).isNotEmpty() } catch(_: Exception) { false }
-                        if(isValid) {
-                            val atomicBackup = AtomicFile(clipboardFileBak)
+                withContext(NonCancellable) {
+                    synchronized(atomicClipboardFile) {
+                        migrateLegacyClipboardBak()
 
-                            val stream = atomicBackup.startWrite()
-                            try {
-                                stream.write(existingData)
-                                stream.flush()
-                                atomicBackup.finishWrite(stream)
-                                backupSucceeded = true
-                            } catch (e: Exception) {
-                                atomicBackup.failWrite(stream)
+                        // Produce a backup
+                        if (clipboardFile.exists() && shouldBackup) {
+                            val existingData = atomicClipboardFile.readFully()
+
+                            val isValid = try {
+                                decodeData(existingData).isNotEmpty()
+                            } catch (_: Exception) {
+                                false
+                            }
+                            if (isValid) {
+                                val atomicBackup = AtomicFile(clipboardFileBak)
+
+                                val stream = atomicBackup.startWrite()
+                                try {
+                                    stream.write(existingData)
+                                    stream.flush()
+                                    atomicBackup.finishWrite(stream)
+                                    backupSucceeded = true
+                                } catch (e: Exception) {
+                                    atomicBackup.failWrite(stream)
+                                }
                             }
                         }
-                    }
 
-                    val stream = atomicClipboardFile.startWrite()
-                    try {
-                        stream.write(json)
-                        stream.flush()
-                        atomicClipboardFile.finishWrite(stream)
-                        lastClipboardWritten = list
-                    } catch (e: Exception) {
-                        atomicClipboardFile.failWrite(stream)
-                        throw e
+                        val stream = atomicClipboardFile.startWrite()
+                        try {
+                            stream.write(json)
+                            stream.flush()
+                            atomicClipboardFile.finishWrite(stream)
+                            lastClipboardWritten = list
+                        } catch (e: Exception) {
+                            atomicClipboardFile.failWrite(stream)
+                            throw e
+                        }
                     }
                 }
 
@@ -811,6 +829,8 @@ class ClipboardHistoryManager(val context: Context, val coroutineScope: Lifecycl
 
                 clipboardIOFailure.value = false
             } catch (e: Exception) {
+                if(e is CancellationException) return@launch
+
                 clipboardIOFailure.value = true
                 clipboardIOFailureReason = e.toString()
                 reportError("saveClipboard", e)
@@ -871,6 +891,7 @@ ${if(clipboardFileSwap.exists()) { clipboardFileSwap.readText() } else { "File d
             if(clipboardSetting == false) {
                 deleteClipboard()
             } else if (clipboardFile.exists()) {
+                migrateLegacyClipboardBak()
                 val data = synchronized(atomicClipboardFile) {
                     try {
                         decodeFile(clipboardFile)
