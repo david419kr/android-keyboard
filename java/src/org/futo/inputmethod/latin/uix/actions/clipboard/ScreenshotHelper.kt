@@ -123,6 +123,7 @@ class ScreenshotHelper(
 
 
     fun onDestroy() {
+        unregisterObserver()
         settingsObservingJob.cancel()
     }
 
