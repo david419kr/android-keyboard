@@ -972,7 +972,7 @@ public final class InputLogic {
         }
 
         if(codePoint == Constants.CODE_ENTER
-                && !inputTransaction.mSettingsValues.mInputAttributes.mSendKeyEventsMode
+                && inputTransaction.mSettingsValues.mInputAttributes.mSendKeyEventsMode
         ) {
             sendDownUpKeyEvent(KeyEvent.KEYCODE_ENTER, 0);
             return;
