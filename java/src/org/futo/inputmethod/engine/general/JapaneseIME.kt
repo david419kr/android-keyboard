@@ -461,7 +461,8 @@ class JapaneseIME(val helper: IMEHelper) : IMEInterface {
             id?.mElement?.kind == KeyboardLayoutKind.Alphabet0 && layoutHint == "qwerty" ->
                 Keyboard.KeyboardSpecification.QWERTY_KANA
 
-            id?.mElement?.kind == KeyboardLayoutKind.Alphabet1 && layoutHint == "qwerty" ->
+            id?.mElement?.kind == KeyboardLayoutKind.Alphabet1 &&
+                    (layoutHint == "qwerty" || layoutHint == JAPANESE_MOAKI_IME_HINT) ->
                 Keyboard.KeyboardSpecification.QWERTY_ALPHABET
 
             id?.mElement?.kind == KeyboardLayoutKind.Alphabet1 ||
@@ -1262,6 +1263,35 @@ class JapaneseIME(val helper: IMEHelper) : IMEInterface {
         return true
     }
 
+    private fun fullWidthAlnumCodePoint(codePoint: Int): Int? = when(codePoint) {
+        in '0'.code .. '9'.code -> '０'.code + (codePoint - '0'.code)
+        in 'A'.code .. 'Z'.code -> 'Ａ'.code + (codePoint - 'A'.code)
+        in 'a'.code .. 'z'.code -> 'ａ'.code + (codePoint - 'a'.code)
+        else -> null
+    }
+
+    private fun isQwertyAlphabetSubKeyboard(): Boolean {
+        val kind = helper.keyboardSwitcher.keyboard?.mId?.mElement?.kind
+        return kind == KeyboardLayoutKind.Alphabet1 &&
+                (layoutHint == "qwerty" || layoutHint == JAPANESE_MOAKI_IME_HINT)
+    }
+
+    private fun maybeHandleJapaneseFullWidthAlnum(event: Event): Boolean {
+        val codePoint = event.mCodePoint
+        val fullWidthCodePoint = fullWidthAlnumCodePoint(codePoint) ?: return false
+
+        val shouldUseFullWidth = when {
+            layoutHint == JAPANESE_MOAKI_IME_HINT && codePoint in '0'.code .. '9'.code -> true
+            isQwertyAlphabetSubKeyboard() -> true
+            else -> false
+        }
+
+        if(!shouldUseFullWidth) return false
+
+        sendMozcCodePoint(fullWidthCodePoint)
+        return true
+    }
+
     // TODO: This rough code pattern appears 3 times in the codebase, probably time to make a util function
     private fun maybeHandleAction(keyCode: Int): Boolean {
         if (keyCode <= Constants.CODE_ACTION_MAX && keyCode >= Constants.CODE_ACTION_0) {
@@ -1288,6 +1318,10 @@ class JapaneseIME(val helper: IMEHelper) : IMEInterface {
                             && (getCurrentConfigSpec() != configSpec))
                 {
                     updateConfig(false)
+                }
+
+                if(maybeHandleJapaneseFullWidthAlnum(event)) {
+                    return
                 }
 
                 if(maybeHandleMoakiMiddleDot(event)) {
