@@ -369,6 +369,72 @@ fun refreshMozcDictionaries(context: Context, executor: SessionExecutor) {
 
 private const val SUGGESTION_ID_INVERSION = 10000
 private const val TAG = "JapaneseIME"
+private const val JAPANESE_MOAKI_IME_HINT = "moaki"
+private const val JAPANESE_12KEY_IME_HINT = "12key"
+private const val MOAKI_MODIFIER_DOT = '·'
+private const val JAPANESE_MIDDLE_DOT = '・'
+private const val MOAKI_SMALL_KANA_KEY = '`'
+private const val MOAKI_JAPANESE_KEY = '*'
+private const val MOAKI_DAKUTEN_KEY = '['
+private const val MOAKI_HANDAKUTEN_KEY = ']'
+
+private val MoakiMozcTextOutputs = setOf(
+    "ちゃ", "ちゅ", "ちぇ", "ちょ",
+    "うぃ", "うぇ"
+)
+
+private val MoakiYoonReplacements = mapOf(
+    "あ" to "や", "う" to "ゆ", "お" to "よ",
+    "か" to "きゃ", "く" to "きゅ", "こ" to "きょ",
+    "が" to "ぎゃ", "ぐ" to "ぎゅ", "ご" to "ぎょ",
+    "さ" to "しゃ", "す" to "しゅ", "そ" to "しょ",
+    "ざ" to "じゃ", "ず" to "じゅ", "ぞ" to "じょ",
+    "た" to "ちゃ", "つ" to "ちゅ", "と" to "ちょ",
+    "だ" to "ぢゃ", "づ" to "ぢゅ", "ど" to "ぢょ",
+    "な" to "にゃ", "ぬ" to "にゅ", "の" to "にょ",
+    "は" to "ひゃ", "ふ" to "ひゅ", "ほ" to "ひょ",
+    "ば" to "びゃ", "ぶ" to "びゅ", "ぼ" to "びょ",
+    "ぱ" to "ぴゃ", "ぷ" to "ぴゅ", "ぽ" to "ぴょ",
+    "ま" to "みゃ", "む" to "みゅ", "も" to "みょ",
+    "ら" to "りゃ", "る" to "りゅ", "ろ" to "りょ",
+)
+
+private val MoakiSmallKanaReplacements = mapOf(
+    "あ" to "ぁ", "い" to "ぃ", "う" to "ぅ", "え" to "ぇ", "お" to "ぉ",
+    "ぁ" to "あ", "ぃ" to "い", "ぅ" to "う", "ぇ" to "え", "ぉ" to "お",
+    "や" to "ゃ", "ゆ" to "ゅ", "よ" to "ょ",
+    "ゃ" to "や", "ゅ" to "ゆ", "ょ" to "よ",
+    "つ" to "っ", "っ" to "つ",
+    "わ" to "ゎ", "ゎ" to "わ",
+    "ア" to "ァ", "イ" to "ィ", "ウ" to "ゥ", "エ" to "ェ", "オ" to "ォ",
+    "ァ" to "ア", "ィ" to "イ", "ゥ" to "ウ", "ェ" to "エ", "ォ" to "オ",
+    "ヤ" to "ャ", "ユ" to "ュ", "ヨ" to "ョ",
+    "ャ" to "ヤ", "ュ" to "ユ", "ョ" to "ヨ",
+    "ツ" to "ッ", "ッ" to "ツ",
+    "ワ" to "ヮ", "ヮ" to "ワ",
+)
+
+private val MoakiDakutenReplacements = mapOf(
+    "か" to "が", "き" to "ぎ", "く" to "ぐ", "け" to "げ", "こ" to "ご",
+    "が" to "か", "ぎ" to "き", "ぐ" to "く", "げ" to "け", "ご" to "こ",
+    "さ" to "ざ", "し" to "じ", "す" to "ず", "せ" to "ぜ", "そ" to "ぞ",
+    "ざ" to "さ", "じ" to "し", "ず" to "す", "ぜ" to "せ", "ぞ" to "そ",
+    "た" to "だ", "ち" to "ぢ", "つ" to "づ", "て" to "で", "と" to "ど",
+    "だ" to "た", "ぢ" to "ち", "づ" to "つ", "で" to "て", "ど" to "と",
+    "は" to "ば", "ひ" to "び", "ふ" to "ぶ", "へ" to "べ", "ほ" to "ぼ",
+    "ば" to "は", "び" to "ひ", "ぶ" to "ふ", "べ" to "へ", "ぼ" to "ほ",
+    "う" to "ヴ", "ヴ" to "う",
+)
+
+private val MoakiHandakutenReplacements = mapOf(
+    "は" to "ぱ", "ひ" to "ぴ", "ふ" to "ぷ", "へ" to "ぺ", "ほ" to "ぽ",
+    "ば" to "ぱ", "び" to "ぴ", "ぶ" to "ぷ", "べ" to "ぺ", "ぼ" to "ぽ",
+    "ぱ" to "は", "ぴ" to "ひ", "ぷ" to "ふ", "ぺ" to "へ", "ぽ" to "ほ",
+)
+
+private fun isJapaneseTwelveKeyLikeHint(imeHint: String?): Boolean =
+    imeHint == JAPANESE_12KEY_IME_HINT || imeHint == JAPANESE_MOAKI_IME_HINT
+
 class JapaneseIME(val helper: IMEHelper) : IMEInterface {
     companion object { init { MozcLog.forceLoggable = BuildConfig.DEBUG }}
 
@@ -606,7 +672,8 @@ class JapaneseIME(val helper: IMEHelper) : IMEInterface {
         return false
     }
 
-    override fun getStateHint(imeHint: String?): StateHint = if(imeHint == "12key") StateHint(true, true) else StateHint()
+    override fun getStateHint(imeHint: String?): StateHint =
+        if(isJapaneseTwelveKeyLikeHint(imeHint)) StateHint(true, true) else StateHint()
 
     private fun createKeyEvent(
         original: KeyEvent,
@@ -802,11 +869,30 @@ class JapaneseIME(val helper: IMEHelper) : IMEInterface {
     }
 
     private var hasPreedit = false
+    private var currentPreeditText = ""
+    private var currentPreeditCursor = 0
+    private var currentPreeditIsConversion = false
+
+    private fun updatePreeditState(output: ProtoCommands.Output) {
+        hasPreedit = output.hasPreedit()
+        currentPreeditText = if(output.hasPreedit()) {
+            output.preedit.segmentList.joinToString("") { it.value }
+        } else {
+            ""
+        }
+        currentPreeditCursor = if(output.hasPreedit()) output.preedit.cursor else 0
+        currentPreeditIsConversion =
+            output.hasAllCandidateWords() &&
+                    output.allCandidateWords.hasCategory() &&
+                    output.allCandidateWords.category == ProtoCandidateWindow.Category.CONVERSION
+    }
+
     internal fun renderInputConnection(command: ProtoCommands.Command, keyEvent: KeyEventInterface?) {
         val inputConnection = helper.getCurrentInputConnection() ?: return
         val output = command.output
         if(!output.hasConsumed() || !output.consumed) {
             maybeCommitText(output, inputConnection)
+            updatePreeditState(output)
 
             if(keyEvent?.nativeEvent?.isPresent == true) {
                 sendKeyEvent(keyEvent)
@@ -845,13 +931,13 @@ class JapaneseIME(val helper: IMEHelper) : IMEInterface {
             inputConnection.endBatchEdit()
         }
 
-        hasPreedit = output.hasPreedit()
+        updatePreeditState(output)
         helper.keyboardSwitcher.requestUpdatingShiftState(getCurrentAutoCapsState())
     }
 
     // We use the "shift" alphabet state to show the language switch key
     override fun getCurrentAutoCapsState() = when {
-        !hasPreedit && layoutHint == "12key" && !evalPending.get() -> TextUtils.CAP_MODE_CHARACTERS
+        !hasPreedit && isJapaneseTwelveKeyLikeHint(layoutHint) && !evalPending.get() -> TextUtils.CAP_MODE_CHARACTERS
         else -> Constants.TextUtils.CAP_MODE_OFF
     }
 
@@ -1047,6 +1133,132 @@ class JapaneseIME(val helper: IMEHelper) : IMEInterface {
 
     }
 
+    private fun createSyntheticKeyEventInterface(keyCode: Int): KeyEventInterface {
+        val eventTime = System.currentTimeMillis()
+        return KeycodeConverter.getKeyEventInterface(
+            KeyEvent(
+                eventTime,
+                eventTime,
+                KeyEvent.ACTION_DOWN,
+                keyCode,
+                0,
+                0,
+                KeyCharacterMap.VIRTUAL_KEYBOARD,
+                0,
+                KeyEvent.FLAG_SOFT_KEYBOARD or KeyEvent.FLAG_KEEP_TOUCH_MODE
+            )
+        )
+    }
+
+    private fun sendMozcKey(
+        mozcEvent: ProtoCommands.KeyEvent,
+        triggeringKeyEvent: KeyEventInterface
+    ) {
+        evalPending.set(true)
+        executor.sendKey(
+            mozcEvent,
+            triggeringKeyEvent,
+            emptyList(),
+            evaluationCallback
+        )
+    }
+
+    private fun sendMozcCodePoint(codePoint: Int) {
+        sendMozcKey(
+            getMozcKeyEvent(codePoint),
+            KeycodeConverter.getKeyEventInterface(codePoint)
+        )
+    }
+
+    private fun sendMozcText(text: CharSequence) {
+        val value = text.toString()
+        var offset = 0
+        while(offset < value.length) {
+            val codePoint = value.codePointAt(offset)
+            sendMozcCodePoint(codePoint)
+            offset += Character.charCount(codePoint)
+        }
+    }
+
+    private fun sendMozcBackspace() {
+        sendMozcKey(
+            KeycodeConverter.SPECIALKEY_BACKSPACE,
+            createSyntheticKeyEventInterface(KeyEvent.KEYCODE_DEL)
+        )
+    }
+
+    private fun lastMoakiPreeditKana(): String? {
+        if(layoutHint != JAPANESE_MOAKI_IME_HINT) return null
+        if(!hasPreedit || currentPreeditIsConversion) return null
+
+        val preeditCodePointCount = currentPreeditText.codePointCount(0, currentPreeditText.length)
+        if(currentPreeditCursor <= 0 || currentPreeditCursor != preeditCodePointCount) return null
+
+        val lastCodePointIndex = currentPreeditText.offsetByCodePoints(0, currentPreeditCursor - 1)
+        val lastCodePoint = currentPreeditText.codePointAt(lastCodePointIndex)
+        return String(Character.toChars(lastCodePoint))
+    }
+
+    private fun moakiYoonReplacement(): String? {
+        val lastKana = lastMoakiPreeditKana() ?: return null
+        return MoakiYoonReplacements[lastKana]
+    }
+
+    private fun maybeHandleMoakiMiddleDot(event: Event): Boolean {
+        if(layoutHint != JAPANESE_MOAKI_IME_HINT || event.mCodePoint != MOAKI_MODIFIER_DOT.code) {
+            return false
+        }
+
+        val replacement = moakiYoonReplacement()
+        if(replacement != null) {
+            sendMozcBackspace()
+            sendMozcText(replacement)
+        } else {
+            sendMozcCodePoint(JAPANESE_MIDDLE_DOT.code)
+        }
+
+        return true
+    }
+
+    private fun moakiKanaModifierReplacement(codePoint: Int): String? {
+        val lastKana = lastMoakiPreeditKana() ?: return null
+
+        return when(codePoint) {
+            MOAKI_JAPANESE_KEY.code,
+            MOAKI_SMALL_KANA_KEY.code -> MoakiSmallKanaReplacements[lastKana]
+            MOAKI_DAKUTEN_KEY.code -> MoakiDakutenReplacements[lastKana]
+            MOAKI_HANDAKUTEN_KEY.code -> MoakiHandakutenReplacements[lastKana]
+            else -> null
+        }
+    }
+
+    private fun maybeHandleMoakiKanaModifier(event: Event): Boolean {
+        if(layoutHint != JAPANESE_MOAKI_IME_HINT) return false
+        if(event.mCodePoint !in setOf(
+                MOAKI_JAPANESE_KEY.code,
+                MOAKI_SMALL_KANA_KEY.code,
+                MOAKI_DAKUTEN_KEY.code,
+                MOAKI_HANDAKUTEN_KEY.code
+            )
+        ) {
+            return false
+        }
+
+        val replacement = moakiKanaModifierReplacement(event.mCodePoint) ?: return false
+        sendMozcBackspace()
+        sendMozcText(replacement)
+        return true
+    }
+
+    private fun maybeHandleMoakiSoftwareText(event: Event): Boolean {
+        if(layoutHint != JAPANESE_MOAKI_IME_HINT) return false
+        val text = event.mText ?: return false
+        if(!MoakiMozcTextOutputs.contains(text.toString())) return false
+
+        sendMozcText(text)
+        return true
+    }
+
     // TODO: This rough code pattern appears 3 times in the codebase, probably time to make a util function
     private fun maybeHandleAction(keyCode: Int): Boolean {
         if (keyCode <= Constants.CODE_ACTION_MAX && keyCode >= Constants.CODE_ACTION_0) {
@@ -1073,6 +1285,14 @@ class JapaneseIME(val helper: IMEHelper) : IMEInterface {
                             && (getCurrentConfigSpec() != configSpec))
                 {
                     updateConfig(false)
+                }
+
+                if(maybeHandleMoakiMiddleDot(event)) {
+                    return
+                }
+
+                if(maybeHandleMoakiKanaModifier(event)) {
+                    return
                 }
 
                 val triggeringKeyEvent = if (event.mKeyCode != Event.NOT_A_KEY_CODE) {
@@ -1143,6 +1363,10 @@ class JapaneseIME(val helper: IMEHelper) : IMEInterface {
             }
 
             Event.EVENT_TYPE_SOFTWARE_GENERATED_STRING -> {
+                if(maybeHandleMoakiSoftwareText(event)) {
+                    return
+                }
+
                 resetContextAndCommitText(event.mText)
             }
 
