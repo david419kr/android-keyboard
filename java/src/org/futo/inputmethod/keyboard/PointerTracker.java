@@ -58,6 +58,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
     private static final boolean DEBUG_MOVE_EVENT = false;
     private static final boolean DEBUG_LISTENER = false;
     private static boolean DEBUG_MODE = DebugFlags.DEBUG_ENABLED || DEBUG_EVENT;
+    private static final String JAPANESE_MOAKI_LAYOUT = "japanese_moaki_responsive";
 
     static final class PointerTrackerParams {
         public final boolean mKeySelectionByDraggingFinger;
@@ -149,6 +150,9 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
 
     @Nullable
     private Direction mFlickDirection;
+
+    @Nullable
+    private Direction mMoakiReturnFlickDirection;
 
     private boolean mIsSlidingCursor;
     private int mStartX;
@@ -331,6 +335,113 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
                             Constants.NOT_A_COORDINATE, Constants.NOT_A_COORDINATE, isKeyRepeat);
                 }
             }
+        }
+    }
+
+    private boolean isJapaneseMoakiLayout() {
+        return mKeyboard != null
+                && mKeyboard.mId != null
+                && JAPANESE_MOAKI_LAYOUT.equals(mKeyboard.mId.mKeyboardLayoutSetName);
+    }
+
+    private void sendMoakiReturnFlickText(final String text, final long eventTime) {
+        int offset = 0;
+        while (offset < text.length()) {
+            final int codePoint = text.codePointAt(offset);
+            sTypingTimeRecorder.onCodeInput(codePoint, eventTime);
+            sListener.onCodeInput(codePoint,
+                    Constants.NOT_A_COORDINATE, Constants.NOT_A_COORDINATE, false);
+            offset += Character.charCount(codePoint);
+        }
+    }
+
+    @Nullable
+    private static String getMoakiYoonText(final Key key) {
+        if (key == null || key.getCode() == Constants.CODE_OUTPUT_TEXT) {
+            return null;
+        }
+
+        switch (key.getCode()) {
+        case 0x3042: // あ
+            return "\u3084"; // や
+        case 0x3046: // う
+            return "\u3086"; // ゆ
+        case 0x304A: // お
+            return "\u3088"; // よ
+        case 0x304B: // か
+            return "\u304D\u3083"; // きゃ
+        case 0x304F: // く
+            return "\u304D\u3085"; // きゅ
+        case 0x3053: // こ
+            return "\u304D\u3087"; // きょ
+        case 0x304C: // が
+            return "\u304E\u3083"; // ぎゃ
+        case 0x3050: // ぐ
+            return "\u304E\u3085"; // ぎゅ
+        case 0x3054: // ご
+            return "\u304E\u3087"; // ぎょ
+        case 0x3055: // さ
+            return "\u3057\u3083"; // しゃ
+        case 0x3059: // す
+            return "\u3057\u3085"; // しゅ
+        case 0x305D: // そ
+            return "\u3057\u3087"; // しょ
+        case 0x3056: // ざ
+            return "\u3058\u3083"; // じゃ
+        case 0x305A: // ず
+            return "\u3058\u3085"; // じゅ
+        case 0x305E: // ぞ
+            return "\u3058\u3087"; // じょ
+        case 0x305F: // た
+            return "\u3061\u3083"; // ちゃ
+        case 0x3064: // つ
+            return "\u3061\u3085"; // ちゅ
+        case 0x3068: // と
+            return "\u3061\u3087"; // ちょ
+        case 0x3060: // だ
+            return "\u3062\u3083"; // ぢゃ
+        case 0x3065: // づ
+            return "\u3062\u3085"; // ぢゅ
+        case 0x3069: // ど
+            return "\u3062\u3087"; // ぢょ
+        case 0x306A: // な
+            return "\u306B\u3083"; // にゃ
+        case 0x306C: // ぬ
+            return "\u306B\u3085"; // にゅ
+        case 0x306E: // の
+            return "\u306B\u3087"; // にょ
+        case 0x306F: // は
+            return "\u3072\u3083"; // ひゃ
+        case 0x3075: // ふ
+            return "\u3072\u3085"; // ひゅ
+        case 0x307B: // ほ
+            return "\u3072\u3087"; // ひょ
+        case 0x3070: // ば
+            return "\u3073\u3083"; // びゃ
+        case 0x3076: // ぶ
+            return "\u3073\u3085"; // びゅ
+        case 0x307C: // ぼ
+            return "\u3073\u3087"; // びょ
+        case 0x3071: // ぱ
+            return "\u3074\u3083"; // ぴゃ
+        case 0x3077: // ぷ
+            return "\u3074\u3085"; // ぴゅ
+        case 0x307D: // ぽ
+            return "\u3074\u3087"; // ぴょ
+        case 0x307E: // ま
+            return "\u307F\u3083"; // みゃ
+        case 0x3080: // む
+            return "\u307F\u3085"; // みゅ
+        case 0x3082: // も
+            return "\u307F\u3087"; // みょ
+        case 0x3089: // ら
+            return "\u308A\u3083"; // りゃ
+        case 0x308B: // る
+            return "\u308A\u3085"; // りゅ
+        case 0x308D: // ろ
+            return "\u308A\u3087"; // りょ
+        default:
+            return null;
         }
     }
 
@@ -761,6 +872,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
             mIsSlidingCursor = key.getCode() == Constants.CODE_DELETE || key.getCode() == Constants.CODE_SPACE;
             mIsFlickingKey = !mIsSlidingCursor && key.getHasFlick();
             mFlickDirection = key.flickDirection(0, 0);
+            mMoakiReturnFlickDirection = null;
             mCurrentKey = key;
         }
     }
@@ -1015,6 +1127,11 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
         if(mIsFlickingKey && oldKey != null) {
             final Direction prevDirection = mFlickDirection;
             mFlickDirection = oldKey.flickDirection(x - mStartX, y - mStartY);
+            if (isJapaneseMoakiLayout() && mFlickDirection != null) {
+                final Key flickedKey = oldKey.getFlickKeys().get(mFlickDirection);
+                mMoakiReturnFlickDirection = getMoakiYoonText(flickedKey) != null
+                        ? mFlickDirection : null;
+            }
 
             if(prevDirection != mFlickDirection) {
                 sDrawingProxy.onKeyReleased(oldKey, false);
@@ -1113,11 +1230,28 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
         }
 
         if(mIsFlickingKey && currentKey != null) {
-            final Key flickedKey = currentKey.flick(x - mStartX, y - mStartY);
-            detectAndSendKey(flickedKey, mKeyX, mKeyY, eventTime);
+            final Direction finalDirection = currentKey.flickDirection(x - mStartX, y - mStartY);
+            final boolean shouldApplyMoakiReturnFlick =
+                    isJapaneseMoakiLayout()
+                            && finalDirection == null
+                            && mMoakiReturnFlickDirection != null;
+            final Key flickedKey = shouldApplyMoakiReturnFlick
+                    ? currentKey.getFlickKeys().get(mMoakiReturnFlickDirection)
+                    : (finalDirection != null
+                            ? currentKey.getFlickKeys().get(finalDirection)
+                            : currentKey);
+            final String moakiReturnFlickText = shouldApplyMoakiReturnFlick
+                    ? getMoakiYoonText(flickedKey) : null;
+            if (moakiReturnFlickText != null) {
+                sendMoakiReturnFlickText(moakiReturnFlickText, eventTime);
+                callListenerOnRelease(flickedKey, flickedKey.getCode(), false);
+            } else {
+                detectAndSendKey(flickedKey, mKeyX, mKeyY, eventTime);
+            }
 
             // Cleanup
             currentKey.flickDirection(0, 0);
+            mMoakiReturnFlickDirection = null;
 
             return;
         }

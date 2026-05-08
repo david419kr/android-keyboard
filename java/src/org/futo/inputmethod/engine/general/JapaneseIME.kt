@@ -1204,16 +1204,19 @@ class JapaneseIME(val helper: IMEHelper) : IMEInterface {
         return MoakiYoonReplacements[lastKana]
     }
 
+    private fun applyMoakiYoonReplacement(): Boolean {
+        val replacement = moakiYoonReplacement() ?: return false
+        sendMozcBackspace()
+        sendMozcText(replacement)
+        return true
+    }
+
     private fun maybeHandleMoakiMiddleDot(event: Event): Boolean {
         if(layoutHint != JAPANESE_MOAKI_IME_HINT || event.mCodePoint != MOAKI_MODIFIER_DOT.code) {
             return false
         }
 
-        val replacement = moakiYoonReplacement()
-        if(replacement != null) {
-            sendMozcBackspace()
-            sendMozcText(replacement)
-        } else {
+        if(!applyMoakiYoonReplacement()) {
             sendMozcCodePoint(JAPANESE_MIDDLE_DOT.code)
         }
 
