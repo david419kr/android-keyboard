@@ -399,9 +399,10 @@ class KeyboardSizingCalculator(val context: Context, val uixManager: UixManager)
 
     fun calculate(layoutName: String, settings: SettingsValues): ComputedKeyboardSize? {
         val savedSettings = getSavedSettings()
+        val resolvedLayoutName = context.resolveResponsiveKeyboardLayout(layoutName)
 
         val layout = try {
-            LayoutManager.getLayout(context, layoutName)
+            LayoutManager.getLayout(context, resolvedLayoutName)
         } catch (e: Exception) {
             e.printStackTrace()
             LayoutManager.getLayout(context, "qwerty")

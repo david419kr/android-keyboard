@@ -186,7 +186,8 @@ Layout: $layoutName
             errorLayout
         }
 
-    val layoutName = customLayout?.let { "custompreview" } ?: forcedLayout ?: params.keyboardLayoutSet
+    val layoutName = customLayout?.let { "custompreview" }
+        ?: context.resolveResponsiveKeyboardLayout(forcedLayout ?: params.keyboardLayoutSet)
     val mainLayout = customLayout ?: safeGetLayout(layoutName)
 
     val symbolsLayout = safeGetLayout(mainLayout.layoutSetOverrides.symbols)
