@@ -483,6 +483,8 @@ class JapaneseIME(val helper: IMEHelper) : IMEInterface {
     private fun updateConfig(resetSelectionTracker: Boolean = true) {
         val settings = Settings.getInstance().current
         val halfWidthOnly = helper.context.getSetting(JapaneseIMESettings.HalfWidthSpace)
+        val keyboardSpecification = getCurrentConfigSpec()
+        val fullWidthAlphabetMode = isQwertyAlphabetSubKeyboard(configId)
 
         executor.config = ProtoConfig.Config.newBuilder().apply {
             sessionKeymap = ProtoConfig.Config.SessionKeymap.MOBILE
@@ -490,8 +492,23 @@ class JapaneseIME(val helper: IMEHelper) : IMEInterface {
             useEmojiConversion = true
 
             spaceCharacterForm = when {
+                fullWidthAlphabetMode -> ProtoConfig.Config.FundamentalCharacterForm.FUNDAMENTAL_FULL_WIDTH
                 halfWidthOnly -> ProtoConfig.Config.FundamentalCharacterForm.FUNDAMENTAL_HALF_WIDTH
                 else -> ProtoConfig.Config.FundamentalCharacterForm.FUNDAMENTAL_INPUT_MODE
+            }
+            if(fullWidthAlphabetMode || layoutHint == JAPANESE_MOAKI_IME_HINT) {
+                numpadCharacterForm = ProtoConfig.Config.NumpadCharacterForm.NUMPAD_FULL_WIDTH
+            }
+            if(fullWidthAlphabetMode) {
+                val fullWidthForm = ProtoConfig.Config.CharacterForm.FULL_WIDTH
+                listOf("alphabet", "number").forEach { group ->
+                    addCharacterFormRules(
+                        ProtoConfig.Config.CharacterFormRule.newBuilder()
+                            .setGroup(group)
+                            .setPreeditCharacterForm(fullWidthForm)
+                            .setConversionCharacterForm(fullWidthForm)
+                    )
+                }
             }
             useKanaModifierInsensitiveConversion = true
             useTypingCorrection = true
@@ -515,7 +532,6 @@ class JapaneseIME(val helper: IMEHelper) : IMEInterface {
         }.build()
 
 
-        val keyboardSpecification = getCurrentConfigSpec()
         configSpec = keyboardSpecification
 
         val keyboardRequest = MozcUtil.getRequestBuilder(keyboardSpecification, helper.context.resources.configuration, 3).build()
@@ -525,7 +541,11 @@ class JapaneseIME(val helper: IMEHelper) : IMEInterface {
         )
         executor.switchInputMode(
             Optional.of(KeycodeConverter.getKeyEventInterface(0)),
-            keyboardSpecification.compositionMode,
+            if(fullWidthAlphabetMode) {
+                ProtoCommands.CompositionMode.FULL_ASCII
+            } else {
+                keyboardSpecification.compositionMode
+            },
             resettableEvaluationCallback
         )
 
@@ -1263,22 +1283,25 @@ class JapaneseIME(val helper: IMEHelper) : IMEInterface {
         return true
     }
 
-    private fun fullWidthAlnumCodePoint(codePoint: Int): Int? = when(codePoint) {
+    private fun fullWidthAlnumOrSpaceCodePoint(codePoint: Int): Int? = when(codePoint) {
         in '0'.code .. '9'.code -> '０'.code + (codePoint - '0'.code)
         in 'A'.code .. 'Z'.code -> 'Ａ'.code + (codePoint - 'A'.code)
         in 'a'.code .. 'z'.code -> 'ａ'.code + (codePoint - 'a'.code)
+        Constants.CODE_SPACE -> '　'.code
         else -> null
     }
 
-    private fun isQwertyAlphabetSubKeyboard(): Boolean {
-        val kind = helper.keyboardSwitcher.keyboard?.mId?.mElement?.kind
+    private fun isQwertyAlphabetSubKeyboard(
+        id: KeyboardId? = helper.keyboardSwitcher.keyboard?.mId
+    ): Boolean {
+        val kind = id?.mElement?.kind
         return kind == KeyboardLayoutKind.Alphabet1 &&
                 (layoutHint == "qwerty" || layoutHint == JAPANESE_MOAKI_IME_HINT)
     }
 
     private fun maybeHandleJapaneseFullWidthAlnum(event: Event): Boolean {
         val codePoint = event.mCodePoint
-        val fullWidthCodePoint = fullWidthAlnumCodePoint(codePoint) ?: return false
+        val fullWidthCodePoint = fullWidthAlnumOrSpaceCodePoint(codePoint) ?: return false
 
         val shouldUseFullWidth = when {
             layoutHint == JAPANESE_MOAKI_IME_HINT && codePoint in '0'.code .. '9'.code -> true
