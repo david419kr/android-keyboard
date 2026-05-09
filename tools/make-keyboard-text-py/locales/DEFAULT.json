@@ -557,7 +557,7 @@
             "$"
         ],
         "f": "\\%",
-        "g": ["&", "|"],
+        "g": ["_", "&", "|"],
         "h": ["-", "–", "—", "_"],
         "j": ["+", "="],
         "k": ["!text/keyspec_left_parenthesis", "!text/keyspec_left_square_bracket", "!text/keyspec_left_curly_bracket", "!text/keyspec_less_than"],
