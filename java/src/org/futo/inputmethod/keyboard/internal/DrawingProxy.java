@@ -65,6 +65,13 @@ public interface DrawingProxy {
     public void showSlidingKeyInputPreview(@Nullable PointerTracker tracker);
 
     /**
+     * Show language switch preview for spacebar swipe input.
+     * @param tracker the {@link PointerTracker} that is currently doing the spacebar swipe.
+     * @param direction the swipe direction. Positive means next language, negative means previous.
+     */
+    public void showLanguageSwitchPreview(@Nonnull PointerTracker tracker, int direction);
+
+    /**
      * Show gesture trails.
      * @param tracker the {@link PointerTracker} whose gesture trail will be shown.
      * @param showsFloatingPreviewText when true, a gesture floating preview text will be shown

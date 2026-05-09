@@ -1114,6 +1114,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
                 mStartX += steps * pointerStep;
 
                 if(settingsValues.mSpacebarMode == Settings.SPACEBAR_MODE_SWIPE_LANGUAGE && !mSpacebarLongPressed) {
+                    sDrawingProxy.showLanguageSwitchPreview(this, steps);
                     sListener.onSwipeLanguage(steps);
                 } else {
                     sListener.onMovePointer(steps);

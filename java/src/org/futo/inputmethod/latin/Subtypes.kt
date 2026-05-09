@@ -278,19 +278,19 @@ object Subtypes {
         return layouts
     }
 
-    fun switchToNextLanguage(
+    private fun getNextSubtypeString(
         context: Context,
         direction: Int
-    ): Boolean {
-        if(direction == 0) return true
+    ): String? {
+        if(direction == 0) return null
 
         val enabledSubtypes = context.getSettingBlocking(SubtypesSetting).toList()
         val currentSubtype = context.getSettingBlocking(ActiveSubtype)
 
-        if(enabledSubtypes.isEmpty()) return false
+        if(enabledSubtypes.isEmpty()) return null
 
         if(enabledSubtypes.size == 1 && currentSubtype == enabledSubtypes.first()) {
-            return false
+            return null
         }
 
         val index = enabledSubtypes.indexOf(currentSubtype)
@@ -300,7 +300,117 @@ object Subtypes {
             (index + direction.sign).mod(enabledSubtypes.size)
         }
 
-        context.setSettingBlocking(ActiveSubtype.key, enabledSubtypes[nextIndex])
+        return enabledSubtypes[nextIndex]
+    }
+
+    private fun getLayoutSetName(subtype: InputMethodSubtype): String? =
+        subtype.getExtraValueOf(Constants.Subtype.ExtraValue.KEYBOARD_LAYOUT_SET)
+
+    private fun getSwitchPreviewLabel(
+        context: Context,
+        subtype: InputMethodSubtype,
+        includeLayout: Boolean
+    ): String {
+        val languageName = getName(subtype)
+        if(!includeLayout) return languageName
+
+        val layoutName = getLayoutSetName(subtype)?.takeIf { it.isNotBlank() }?.let {
+            getLayoutName(context, it)
+        } ?: return languageName
+
+        return "$languageName / $layoutName"
+    }
+
+    private fun getSpacebarHintFixedLabel(locale: Locale): String? = when(locale.language) {
+        "ja" -> "日"
+        "ko" -> "한"
+        "zh" -> "中"
+        else -> null
+    }
+
+    private fun abbreviateSpacebarHintLabel(label: String, locale: Locale): String {
+        val trimmed = label.trim()
+        if(trimmed.isEmpty()) return ""
+
+        val endIndex = trimmed.offsetByCodePoints(
+            0, minOf(2, trimmed.codePointCount(0, trimmed.length))
+        )
+        val prefix = trimmed.substring(0, endIndex)
+        val firstEndIndex = prefix.offsetByCodePoints(0, 1)
+        return prefix.substring(0, firstEndIndex).uppercase(locale) + prefix.substring(firstEndIndex)
+    }
+
+    private fun getSpacebarHintLabel(
+        context: Context,
+        subtype: InputMethodSubtype,
+        includeLayout: Boolean
+    ): String {
+        val locale = getLocale(subtype)
+        if(!includeLayout) {
+            getSpacebarHintFixedLabel(locale)?.let { return it }
+        }
+
+        val sourceLabel = if(includeLayout) {
+            getLayoutSetName(subtype)?.takeIf { it.isNotBlank() }?.let {
+                getLayoutName(context, it)
+            }
+        } else {
+            null
+        } ?: getName(subtype)
+
+        return abbreviateSpacebarHintLabel(sourceLabel, locale)
+    }
+
+    fun getSpacebarLanguageSwitchHintLabel(
+        context: Context,
+        direction: Int
+    ): String? {
+        val currentSubtypeString = context.getSettingBlocking(ActiveSubtype)
+        val nextSubtypeString = getNextSubtypeString(context, direction) ?: return null
+        if(currentSubtypeString.isEmpty()) return null
+
+        val currentSubtype = convertToSubtype(currentSubtypeString)
+        val nextSubtype = convertToSubtype(nextSubtypeString)
+        val includeLayout = getName(currentSubtype) == getName(nextSubtype)
+
+        return getSpacebarHintLabel(context, nextSubtype, includeLayout).takeIf { it.isNotBlank() }
+    }
+
+    fun getNextSubtype(
+        context: Context,
+        direction: Int
+    ): InputMethodSubtype? =
+        getNextSubtypeString(context, direction)?.let { convertToSubtype(it) }
+
+    fun getLanguageSwitchPreviewText(
+        context: Context,
+        direction: Int
+    ): String? {
+        val currentSubtypeString = context.getSettingBlocking(ActiveSubtype)
+        val nextSubtypeString = getNextSubtypeString(context, direction) ?: return null
+        if(currentSubtypeString.isEmpty()) return null
+
+        val currentSubtype = convertToSubtype(currentSubtypeString)
+        val nextSubtype = convertToSubtype(nextSubtypeString)
+        val includeLayout = getName(currentSubtype) == getName(nextSubtype)
+        val currentLabel = getSwitchPreviewLabel(context, currentSubtype, includeLayout)
+        val nextLabel = getSwitchPreviewLabel(context, nextSubtype, includeLayout)
+
+        return if(direction.sign >= 0) {
+            "$nextLabel  ←  $currentLabel"
+        } else {
+            "$currentLabel  →  $nextLabel"
+        }
+    }
+
+    fun switchToNextLanguage(
+        context: Context,
+        direction: Int
+    ): Boolean {
+        if(direction == 0) return true
+
+        val nextSubtype = getNextSubtypeString(context, direction) ?: return false
+        context.setSettingBlocking(ActiveSubtype.key, nextSubtype)
         return true
     }
 

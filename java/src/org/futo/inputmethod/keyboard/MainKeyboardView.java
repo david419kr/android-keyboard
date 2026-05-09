@@ -25,6 +25,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Align;
+import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.util.AttributeSet;
@@ -47,16 +48,19 @@ import org.futo.inputmethod.keyboard.internal.KeyDrawParams;
 import org.futo.inputmethod.keyboard.internal.KeyPreviewChoreographer;
 import org.futo.inputmethod.keyboard.internal.KeyPreviewDrawParams;
 import org.futo.inputmethod.keyboard.internal.KeyPreviewView;
+import org.futo.inputmethod.keyboard.internal.LanguageSwitchDrawingPreview;
 import org.futo.inputmethod.keyboard.internal.MoreKeySpec;
 import org.futo.inputmethod.keyboard.internal.NonDistinctMultitouchHelper;
 import org.futo.inputmethod.keyboard.internal.SlidingKeyInputDrawingPreview;
 import org.futo.inputmethod.keyboard.internal.TimerHandler;
 import org.futo.inputmethod.latin.AudioAndHapticFeedbackManager;
+import org.futo.inputmethod.latin.Subtypes;
 import org.futo.inputmethod.latin.uix.DynamicThemeProvider;
 import org.futo.inputmethod.latin.R;
 import org.futo.inputmethod.latin.SuggestedWords;
 import org.futo.inputmethod.latin.common.Constants;
 import org.futo.inputmethod.latin.common.CoordinateUtils;
+import org.futo.inputmethod.latin.settings.Settings;
 import org.futo.inputmethod.latin.uix.theme.KeyDrawingConfiguration;
 import org.futo.inputmethod.latin.utils.LanguageOnSpacebarUtils;
 import org.futo.inputmethod.latin.utils.SubtypeLocaleUtils;
@@ -136,6 +140,8 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
     private static final float LANGUAGE_ON_SPACEBAR_TEXT_SHADOW_RADIUS_DISABLED = -1.0f;
     // The minimum x-scale to fit the language name on spacebar.
     private static final float MINIMUM_XSCALE_OF_LANGUAGE_NAME = 0.8f;
+    private static final float SPACEBAR_LANGUAGE_HINT_LABEL_TEXT_RATIO = 0.87f;
+    private static final float SPACEBAR_LANGUAGE_HINT_MIN_LABEL_SCALE_X = 0.85f;
 
     // Stuff to draw altCodeWhileTyping keys.
     private final ObjectAnimator mAltCodeKeyWhileTypingFadeoutAnimator;
@@ -148,6 +154,9 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
     private final GestureFloatingTextDrawingPreview mGestureFloatingTextDrawingPreview;
     private final GestureTrailsDrawingPreview mGestureTrailsDrawingPreview;
     private final SlidingKeyInputDrawingPreview mSlidingKeyInputDrawingPreview;
+    private final LanguageSwitchDrawingPreview mLanguageSwitchDrawingPreview;
+    private final Paint mSpacebarLanguageSwipeHintPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Path mSpacebarLanguageSwipeHintPath = new Path();
 
     // Key preview
     private final KeyPreviewDrawParams mKeyPreviewDrawParams;
@@ -254,6 +263,10 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
 
         mSlidingKeyInputDrawingPreview = new SlidingKeyInputDrawingPreview(mainKeyboardViewAttr, mDrawableProvider);
         mSlidingKeyInputDrawingPreview.setDrawingView(drawingPreviewPlacerView);
+
+        mLanguageSwitchDrawingPreview = new LanguageSwitchDrawingPreview(mainKeyboardViewAttr);
+        mLanguageSwitchDrawingPreview.setPreviewEnabled(true);
+        mLanguageSwitchDrawingPreview.setDrawingView(drawingPreviewPlacerView);
         mainKeyboardViewAttr.recycle();
 
         mDrawingPreviewPlacerView = drawingPreviewPlacerView;
@@ -533,6 +546,20 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
         }
     }
 
+    @Override
+    public void showLanguageSwitchPreview(@Nonnull final PointerTracker tracker,
+            final int direction) {
+        locatePreviewPlacerView();
+        final String previewText = Subtypes.INSTANCE.getLanguageSwitchPreviewText(
+                getContext(), direction);
+        if (previewText == null) {
+            mLanguageSwitchDrawingPreview.dismissLanguageSwitchPreview();
+            return;
+        }
+
+        mLanguageSwitchDrawingPreview.showLanguageSwitchPreview(tracker, previewText);
+    }
+
     private void setGesturePreviewMode(final boolean isGestureTrailEnabled,
             final boolean isGestureFloatingPreviewTextEnabled) {
         mGestureFloatingTextDrawingPreview.setPreviewEnabled(isGestureFloatingPreviewTextEnabled);
@@ -807,6 +834,7 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
         final int code = key.getCode();
         if (code == Constants.CODE_SPACE && key.getIconId().equals("space_key")) {
             drawLanguageOnSpacebar(key, canvas, paint, kdc.getHintColor());
+            drawSpacebarLanguageSwipeHints(key, canvas, kdc.getHintColor());
             // Whether space key needs to show the "..." popup hint for special purposes
             if (key.isLongPressEnabled() && mHasMultipleEnabledIMEsOrSubtypes) {
                 drawKeyPopupHint(key, canvas, paint, params);
@@ -875,6 +903,141 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
         return "";
     }
 
+    private boolean shouldDrawSpacebarLanguageSwipeHints() {
+        return mHasMultipleEnabledIMEsOrSubtypes
+                && Settings.getInstance().getCurrent().mSpacebarMode
+                == Settings.SPACEBAR_MODE_SWIPE_LANGUAGE;
+    }
+
+    private float getSpacebarLanguageSwipeHintLabelTextSize(final int keyHeight) {
+        return Math.min(mLanguageOnSpacebarTextSize * SPACEBAR_LANGUAGE_HINT_LABEL_TEXT_RATIO,
+                keyHeight * 0.42f);
+    }
+
+    private float getSpacebarLanguageSwipeHintLabelScale(final int keyWidth,
+            final float leftLabelWidth, final float rightLabelWidth) {
+        final float maxLabelWidth = Math.max(leftLabelWidth, rightLabelWidth);
+        if (maxLabelWidth <= 0.0f) {
+            return 0.0f;
+        }
+
+        final float maxAllowedLabelWidth = keyWidth * 0.24f;
+        if (maxLabelWidth <= maxAllowedLabelWidth) {
+            return 1.0f;
+        }
+
+        final float scale = maxAllowedLabelWidth / maxLabelWidth;
+        return scale >= SPACEBAR_LANGUAGE_HINT_MIN_LABEL_SCALE_X ? scale : 0.0f;
+    }
+
+    private float getSpacebarLanguageSwipeHintReservedWidth(final int keyWidth,
+            final int keyHeight, final Paint paint) {
+        final float chevronHeight = keyHeight * 0.09f;
+        final float chevronWidth = chevronHeight * 0.55f;
+        final float labelGap = keyHeight * 0.055f;
+        final float chevronInset = keyHeight * 0.16f;
+        final String leftLabel = Subtypes.INSTANCE.getSpacebarLanguageSwitchHintLabel(
+                getContext(), 1);
+        final String rightLabel = Subtypes.INSTANCE.getSpacebarLanguageSwitchHintLabel(
+                getContext(), -1);
+
+        final float originalTextSize = paint.getTextSize();
+        final float originalTextScaleX = paint.getTextScaleX();
+        paint.setTextSize(getSpacebarLanguageSwipeHintLabelTextSize(keyHeight));
+        paint.setTextScaleX(1.0f);
+        final float leftLabelWidth = leftLabel != null
+                ? TypefaceUtils.getStringWidth(leftLabel, paint) : 0.0f;
+        final float rightLabelWidth = rightLabel != null
+                ? TypefaceUtils.getStringWidth(rightLabel, paint) : 0.0f;
+        final float labelScale = getSpacebarLanguageSwipeHintLabelScale(
+                keyWidth, leftLabelWidth, rightLabelWidth);
+        paint.setTextSize(originalTextSize);
+        paint.setTextScaleX(originalTextScaleX);
+
+        final float labelWidth = labelScale > 0.0f
+                ? Math.max(leftLabelWidth, rightLabelWidth) * labelScale : 0.0f;
+        return Math.max(keyHeight * 0.32f,
+                mLanguageOnSpacebarHorizontalMargin + labelWidth + labelGap + chevronInset
+                        + chevronWidth);
+    }
+
+    private void drawSpacebarLanguageSwipeHints(final Key key, final Canvas canvas,
+            final int color) {
+        if (!shouldDrawSpacebarLanguageSwipeHints()) {
+            return;
+        }
+
+        final int keyWidth = key.getDrawWidth();
+        final int keyHeight = key.getHeight();
+        final float chevronHeight = keyHeight * 0.09f;
+        final float chevronWidth = chevronHeight * 0.55f;
+        final float centerY = keyHeight * 0.50f;
+        final float labelGap = keyHeight * 0.055f;
+        final float chevronInset = keyHeight * 0.16f;
+        final float strokeWidth = Math.max(1.0f, keyHeight * 0.0225f);
+        final String leftLabel = Subtypes.INSTANCE.getSpacebarLanguageSwitchHintLabel(
+                getContext(), 1);
+        final String rightLabel = Subtypes.INSTANCE.getSpacebarLanguageSwitchHintLabel(
+                getContext(), -1);
+
+        final Paint paint = mSpacebarLanguageSwipeHintPaint;
+        paint.setTypeface(mDrawableProvider.selectKeyTypeface(Typeface.DEFAULT));
+        paint.setTextSize(getSpacebarLanguageSwipeHintLabelTextSize(keyHeight));
+        paint.setTextScaleX(1.0f);
+        final float leftLabelWidth = leftLabel != null
+                ? TypefaceUtils.getStringWidth(leftLabel, paint) : 0.0f;
+        final float rightLabelWidth = rightLabel != null
+                ? TypefaceUtils.getStringWidth(rightLabel, paint) : 0.0f;
+        final float labelScale = getSpacebarLanguageSwipeHintLabelScale(
+                keyWidth, leftLabelWidth, rightLabelWidth);
+        final float scaledLabelWidth = labelScale > 0.0f
+                ? Math.max(leftLabelWidth, rightLabelWidth) * labelScale : 0.0f;
+        final float edgePadding = Math.max(keyHeight * 0.22f,
+                mLanguageOnSpacebarHorizontalMargin + scaledLabelWidth + labelGap
+                        + chevronInset + chevronWidth / 2.0f);
+
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeCap(Paint.Cap.ROUND);
+        paint.setStrokeJoin(Paint.Join.ROUND);
+        paint.setStrokeWidth(strokeWidth);
+        paint.setColor(color);
+        paint.setAlpha(Math.min(Constants.Color.ALPHA_OPAQUE, mLanguageOnSpacebarFinalAlpha));
+
+        final Path path = mSpacebarLanguageSwipeHintPath;
+        path.reset();
+        final float leftCenterX = edgePadding;
+        path.moveTo(leftCenterX + chevronWidth / 2.0f, centerY - chevronHeight);
+        path.lineTo(leftCenterX - chevronWidth / 2.0f, centerY);
+        path.lineTo(leftCenterX + chevronWidth / 2.0f, centerY + chevronHeight);
+
+        final float rightCenterX = keyWidth - edgePadding;
+        path.moveTo(rightCenterX - chevronWidth / 2.0f, centerY - chevronHeight);
+        path.lineTo(rightCenterX + chevronWidth / 2.0f, centerY);
+        path.lineTo(rightCenterX - chevronWidth / 2.0f, centerY + chevronHeight);
+
+        canvas.drawPath(path, paint);
+
+        if (labelScale <= 0.0f) {
+            return;
+        }
+
+        paint.setStyle(Paint.Style.FILL);
+        paint.setStrokeWidth(0.0f);
+        paint.setTextScaleX(labelScale);
+        final float textBaseline = centerY - (paint.ascent() + paint.descent()) / 2.0f;
+        if (leftLabel != null) {
+            paint.setTextAlign(Align.RIGHT);
+            canvas.drawText(leftLabel, leftCenterX - chevronWidth / 2.0f - labelGap,
+                    textBaseline, paint);
+        }
+        if (rightLabel != null) {
+            paint.setTextAlign(Align.LEFT);
+            canvas.drawText(rightLabel, rightCenterX + chevronWidth / 2.0f + labelGap,
+                    textBaseline, paint);
+        }
+        paint.setTextScaleX(1.0f);
+    }
+
     private void drawLanguageOnSpacebar(final Key key, final Canvas canvas, final Paint paint, final int color) {
         final Keyboard keyboard = getKeyboard();
         if (keyboard == null) {
@@ -899,8 +1062,14 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
         paint.setColor(color);
         paint.setAlpha(mLanguageOnSpacebarAnimAlpha);
 
-        final float ratio = Math.min(1.0f, (width * 0.90f) /
-                TypefaceUtils.getStringWidth(language, paint));
+        final float reservedWidth = shouldDrawSpacebarLanguageSwipeHints()
+                ? getSpacebarLanguageSwipeHintReservedWidth(width, height, paint) * 2.0f
+                : 0.0f;
+        final float maxTextWidth = Math.max(width * 0.40f, width * 0.90f - reservedWidth);
+        final float languageWidth = TypefaceUtils.getStringWidth(language, paint);
+        final float ratio = languageWidth > 0.0f
+                ? Math.min(1.0f, maxTextWidth / languageWidth)
+                : 1.0f;
 
         paint.setTextScaleX(ratio);
         canvas.drawText(language, width / 2, baseline - descent, paint);
