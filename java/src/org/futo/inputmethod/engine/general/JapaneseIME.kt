@@ -1209,6 +1209,19 @@ class JapaneseIME(val helper: IMEHelper) : IMEInterface {
         )
     }
 
+    private fun sendMozcCursorMove(left: Boolean) {
+        sendMozcKey(
+            if(left) {
+                KeycodeConverter.SPECIALKEY_VIRTUAL_LEFT
+            } else {
+                KeycodeConverter.SPECIALKEY_VIRTUAL_RIGHT
+            },
+            createSyntheticKeyEventInterface(
+                if(left) KeyEvent.KEYCODE_DPAD_LEFT else KeyEvent.KEYCODE_DPAD_RIGHT
+            )
+        )
+    }
+
     private fun lastMoakiPreeditKana(): String? {
         if(layoutHint != JAPANESE_MOAKI_IME_HINT) return null
         if(!hasPreedit || currentPreeditIsConversion) return null
@@ -1473,7 +1486,32 @@ class JapaneseIME(val helper: IMEHelper) : IMEInterface {
     }
 
     override fun onMovePointer(steps: Int, stepOverWords: Boolean, select: Boolean?) {
+        if(hasPreedit) {
+            if(steps < 0) {
+                for(i in 0 until -steps) {
+                    sendMozcCursorMove(left = true)
+                }
+            } else {
+                for(i in 0 until steps) {
+                    sendMozcCursorMove(left = false)
+                }
+            }
+            return
+        }
 
+        var metaState = 0
+        if(stepOverWords) metaState = metaState or KeyEvent.META_CTRL_ON
+        if(select == true) metaState = metaState or KeyEvent.META_SHIFT_ON
+
+        if(steps < 0) {
+            for(i in 0 until -steps) {
+                sendDownUpKeyEvent(KeyEvent.KEYCODE_DPAD_LEFT, metaState)
+            }
+        } else {
+            for(i in 0 until steps) {
+                sendDownUpKeyEvent(KeyEvent.KEYCODE_DPAD_RIGHT, metaState)
+            }
+        }
     }
 
     override fun onMoveDeletePointer(steps: Int) {
