@@ -85,6 +85,15 @@ Notes:
 - `dictionaries`: compressed wordlist/combined dictionary resources; inspect tooling and call sites before assuming they are packaged directly.
 - `tools`: contributor, dicttool, keyboard text generation, and bundle resource scripts.
 
+## Japanese Moaki Custom Layout Notes
+
+The custom Japanese Moaki responsive layout is intentionally split across several files. Check all of these before changing it:
+
+- `java/assets/layouts/Japanese/japanese_moaki_responsive.yaml`: phone/folded Moaki layout. It uses `imeHint: moaki`, is registered in `java/assets/layouts/mapping.yaml`, and currently has lower-case `f`/`w` labels, `w` tap output `ｗ`, `w` down-flick output `う`, and `ー` on the first-row sixth key. Multi-character flick outputs such as `ちゃ`, `ふぁ`, and `うぃ` are layout-level strings but need IME handling below.
+- `java/src/org/futo/inputmethod/v2keyboard/ResponsiveLayoutResolver.kt`: resolves `japanese_moaki_responsive` to existing `japanese_qwerty` on large screens/unfolded foldables. Do not create a separate large-screen Moaki QWERTY file unless the task explicitly asks for it.
+- `java/src/org/futo/inputmethod/engine/general/JapaneseIME.kt`: handles `JAPANESE_MOAKI_IME_HINT`, treats Moaki as Japanese 12-key-like Mozc input, whitelists multi-character Moaki strings in `MoakiMozcTextOutputs`, handles small-kana/dakuten/handakuten modifier keys, old middle-dot yoon conversion logic, full-width top number row for Moaki, and full-width alphabet/number/space behavior in Japanese QWERTY alphabet subkeyboard.
+- `java/src/org/futo/inputmethod/keyboard/PointerTracker.java`: handles Moaki return-to-center flick behavior. Look at `mMoakiReturnFlickDirection`, `getMoakiYoonText(Key key, Key baseKey)`, and the `w`-specific branch: normal `w` down-flick is `う`, but return-to-center from that flick is `ヴ`; `w` right/left/up/up-right return-to-center outputs are `ヴぁ`/`ヴぇ`/`ヴぉ`/`ヴぃ`.
+
 ## Main Runtime Architecture
 
 The high-level input flow is:
