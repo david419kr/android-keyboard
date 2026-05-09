@@ -99,8 +99,8 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
     private static final int sPointerStep = (int)(16.0 * Resources.getSystem().getDisplayMetrics().density);
     private static final int sPointerBigStep = (int)(32.0 * Resources.getSystem().getDisplayMetrics().density);
     private static final int sPointerHugeStep = Integer.min(
-            (int)(128.0 * Resources.getSystem().getDisplayMetrics().density),
-            Resources.getSystem().getDisplayMetrics().widthPixels * 3 / 2
+            (int)(64.0 * Resources.getSystem().getDisplayMetrics().density),
+            Resources.getSystem().getDisplayMetrics().widthPixels * 3 / 4
     );
 
     private static GestureStrokeRecognitionParams sGestureStrokeRecognitionParams;
@@ -161,6 +161,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
     private boolean mStartedOnFastLongPress;
     private boolean mCursorMoved = false;
     private boolean mSpacebarLongPressed = false;
+    private boolean mHasSwipedLanguage = false;
 
     // true if keyboard layout has been changed.
     private boolean mKeyboardLayoutHasBeenChanged;
@@ -172,6 +173,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
     private MoreKeysPanel mMoreKeysPanel;
 
     private static final int MULTIPLIER_FOR_LONG_PRESS_TIMEOUT_IN_SLIDING_INPUT = 3;
+    private static final int MULTIPLIER_FOR_SPACEBAR_SWIPE_IGNORE_TIMEOUT = 4;
     // true if this pointer is in the dragging finger mode.
     boolean mIsInDraggingFinger;
     // true if this pointer is sliding from a modifier key and in the sliding key input mode,
@@ -891,6 +893,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
             mStartTime = System.currentTimeMillis();
             mStartedOnFastLongPress = key.isFastLongPress();
             mSpacebarLongPressed = false;
+            mHasSwipedLanguage = false;
 
             mIsSlidingCursor = key.getCode() == Constants.CODE_DELETE || key.getCode() == Constants.CODE_SPACE;
             mIsFlickingKey = !mIsSlidingCursor && key.getHasFlick();
@@ -1108,14 +1111,18 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
             }
 
             int steps = (x - mStartX) / pointerStep;
-            final int swipeIgnoreTime = settingsValues.mKeyLongpressTimeout / MULTIPLIER_FOR_LONG_PRESS_TIMEOUT_IN_SLIDING_INPUT;
+            final int swipeIgnoreTime = settingsValues.mKeyLongpressTimeout / MULTIPLIER_FOR_SPACEBAR_SWIPE_IGNORE_TIMEOUT;
             if (steps != 0 && mStartTime + swipeIgnoreTime < System.currentTimeMillis()) {
                 mCursorMoved = true;
                 mStartX += steps * pointerStep;
 
                 if(settingsValues.mSpacebarMode == Settings.SPACEBAR_MODE_SWIPE_LANGUAGE && !mSpacebarLongPressed) {
-                    sDrawingProxy.showLanguageSwitchPreview(this, steps);
-                    sListener.onSwipeLanguage(steps);
+                    if (!mHasSwipedLanguage) {
+                        final int direction = Integer.signum(steps);
+                        mHasSwipedLanguage = true;
+                        sDrawingProxy.showLanguageSwitchPreview(this, direction);
+                        sListener.onSwipeLanguage(direction);
+                    }
                 } else {
                     sListener.onMovePointer(steps);
                 }
