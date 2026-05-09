@@ -10,7 +10,6 @@ import org.futo.inputmethod.keyboard.internal.KeyboardParams
 import org.futo.inputmethod.latin.R
 import org.futo.inputmethod.latin.common.Constants
 import org.futo.inputmethod.latin.uix.DynamicThemeProvider
-import kotlin.math.floor
 import kotlin.math.roundToInt
 
 val EPS = 1e-5.toFloat()
@@ -28,11 +27,11 @@ sealed class LayoutEntry(val widthPx: Float) {
 }
 
 // Split a row into two, for split keyboard layouts.
-// If there is an even number of entries, it will be split in the middle
-// If there is an odd number, the middle entry will be duplicated
+// If there is an odd number of entries, the left side gets the extra entry.
 fun List<LayoutEntry>.splitRow(): Pair<List<LayoutEntry>, List<LayoutEntry>> {
-    val row0 = subList(0, (size / 2.0f).roundToInt() )
-    val row1 = subList(floor(size / 2.0f).roundToInt(), size)
+    val splitIndex = (size + 1) / 2
+    val row0 = subList(0, splitIndex)
+    val row1 = subList(splitIndex, size)
 
     return Pair(row0, row1)
 }
@@ -284,67 +283,7 @@ data class LayoutEngine(
     }
 
     private fun alignForSplitLayout(rows: List<LayoutRow>): List<LayoutRow> {
-        if(!isSplitLayout) return rows
-
-        val splitWidths = rows.map { row ->
-            if(!row.splittable) {
-                0.0f
-            } else if(row.entries.firstOrNull { it is LayoutEntry.Key && it.data.width == KeyWidth.Grow } != null) {
-                0.0f
-            } else {
-                row.entries.splitRow().first.sumOf { it.widthPx.toDouble() }.toFloat()
-            }
-        }
-
-        val maxSplitWidth = splitWidths.max()
-
-        return rows.mapIndexed { i, row ->
-            if(!row.splittable) return@mapIndexed row
-
-            val currentRowWidth = splitWidths[i].let { width ->
-                if(width == 0.0f) {
-                    row.entries.sumOf {
-                        if(it is LayoutEntry.Key && it.data.width == KeyWidth.Grow) {
-                            0.0f
-                        } else {
-                            it.widthPx
-                        }.toDouble()
-                    }.toFloat()
-                } else {
-                    width
-                }
-            }
-
-            val extraSpace = maxSplitWidth - currentRowWidth
-
-            val growTarget = if(splitWidths[i] == 0.0f) {
-                KeyWidth.Grow
-            } else {
-                KeyWidth.Regular
-            }
-
-            val growableKeyCount = row.entries.filterIsInstance<LayoutEntry.Key>().count {
-                it.data.width == growTarget
-            }
-
-            val widthPerKey = 2 * extraSpace / growableKeyCount
-            LayoutRow(
-                entries = row.entries.map { entry ->
-                    if(entry is LayoutEntry.Key && entry.data.width == growTarget) {
-                        LayoutEntry.Key(entry.data, if(growTarget == KeyWidth.Regular) {
-                            entry.widthPx + widthPerKey
-                        } else {
-                            widthPerKey
-                        })
-                    } else {
-                        entry
-                    }
-                },
-                widths = row.widths,
-                height = row.height,
-                splittable = row.splittable
-            )
-        }
+        return rows
     }
 
     private fun buildLayoutRow(
