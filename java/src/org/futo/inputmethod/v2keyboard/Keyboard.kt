@@ -26,8 +26,8 @@ typealias KeyList = @Serializable(with = RowKeyListSerializer::class) List<Key>
 data class Row(
     /**
      * If defined, this is a number row. Number rows by default have grow keys, no background,
-     * and smaller height. They may also be hidden depending on the user settings and the value
-     * of [Keyboard.numberRowMode].
+     * and smaller height. 10-key number rows are splittable by default. They may also be hidden
+     * depending on the user settings and the value of [Keyboard.numberRowMode].
      *
      * See [DefaultNumberRow]
      */
@@ -52,9 +52,10 @@ data class Row(
     val rowHeight: Double = if(numbers == null) { 1.0 } else { NumberRowHeight },
 
     /**
-     * (optional) Whether or not this row is splittable. Enabled for letter rows by default.
+     * (optional) Whether or not this row is splittable. Enabled for letter rows and 10-key
+     * number rows by default.
      */
-    val splittable: Boolean = letters != null,
+    val splittable: Boolean = letters != null || numbers?.size == 10,
 
     /**
      * (optional) How this row should behave with respect to the number row. Valid values:
