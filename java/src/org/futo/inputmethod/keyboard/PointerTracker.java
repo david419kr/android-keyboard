@@ -357,7 +357,16 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
 
     @Nullable
     private static String getMoakiYoonText(final Key key) {
-        if (key == null || key.getCode() == Constants.CODE_OUTPUT_TEXT) {
+        if (key == null) {
+            return null;
+        }
+        if (key.getCode() == Constants.CODE_OUTPUT_TEXT) {
+            final String outputText = key.getOutputText();
+            if ("\u3046\u3043".equals(outputText)) { // うぃ
+                return "\u30F4\u3043"; // ヴぃ
+            } else if ("\u3046\u3047".equals(outputText)) { // うぇ
+                return "\u30F4\u3047"; // ヴぇ
+            }
             return null;
         }
 
@@ -440,6 +449,10 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
             return "\u308A\u3085"; // りゅ
         case 0x308D: // ろ
             return "\u308A\u3087"; // りょ
+        case 0x308F: // わ
+            return "\u30F4\u3041"; // ヴぁ
+        case 0x3092: // を
+            return "\u30F4\u3049"; // ヴぉ
         default:
             return null;
         }
