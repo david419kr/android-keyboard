@@ -255,7 +255,9 @@ fun getDefaultSettingForKind(kind: KeyboardSizeSettingKind, context: Context): S
             prefersSplit = true
         )
 
-        KeyboardSizeSettingKind.FoldableInnerDisplay -> SavedKeyboardSizingSettings(
+        KeyboardSizeSettingKind.FoldableInnerDisplay,
+        KeyboardSizeSettingKind.FoldableInnerDisplayPortrait,
+        KeyboardSizeSettingKind.FoldableInnerDisplayLandscape -> SavedKeyboardSizingSettings(
             currentMode = KeyboardMode.Split,
             heightMultiplier = 0.67f * oldHeightMultiplier,
             paddingDp = DpRect(44.dp, 4.dp, 44.dp, 8.dp),
@@ -274,7 +276,17 @@ fun getDefaultSettingForKind(kind: KeyboardSizeSettingKind, context: Context): S
 enum class KeyboardSizeSettingKind {
     Portrait,
     Landscape,
-    FoldableInnerDisplay
+    FoldableInnerDisplay,
+    FoldableInnerDisplayPortrait,
+    FoldableInnerDisplayLandscape
+}
+
+fun KeyboardSizeSettingKind.isFoldableInnerDisplay(): Boolean = when(this) {
+    KeyboardSizeSettingKind.FoldableInnerDisplay,
+    KeyboardSizeSettingKind.FoldableInnerDisplayPortrait,
+    KeyboardSizeSettingKind.FoldableInnerDisplayLandscape -> true
+
+    else -> false
 }
 
 /** Returns whether or not FoldableInnerDisplay size kind is allowed for this device */
@@ -313,6 +325,10 @@ val KeyboardSettings = mapOf(
         stringPreferencesKey("keyboard_settings_landscape"), ""),
     KeyboardSizeSettingKind.FoldableInnerDisplay to SettingsKey(
         stringPreferencesKey("keyboard_settings_fold"), ""),
+    KeyboardSizeSettingKind.FoldableInnerDisplayPortrait to SettingsKey(
+        stringPreferencesKey("keyboard_settings_fold_portrait"), ""),
+    KeyboardSizeSettingKind.FoldableInnerDisplayLandscape to SettingsKey(
+        stringPreferencesKey("keyboard_settings_fold_landscape"), ""),
 )
 
 internal fun Double.guardNaN(default: Double): Double = when {
@@ -340,17 +356,32 @@ class KeyboardSizingCalculator(val context: Context, val uixManager: UixManager)
     private fun dp(v: DpRect): Rect =
         Rect(dp(v.left), dp(v.top), dp(v.right), dp(v.bottom))
 
-    fun getSavedSettings(): SavedKeyboardSizingSettings =
-        SavedKeyboardSizingSettings.fromJsonString(context.getSettingBlocking(
-            KeyboardSettings[sizeStateProvider.currentSizeState]!!
-        )) ?: getDefaultSettingForKind(sizeStateProvider.currentSizeState, context)
+    private fun getSavedSettingsForKind(sizeState: KeyboardSizeSettingKind): SavedKeyboardSizingSettings? {
+        val savedSettings = SavedKeyboardSizingSettings.fromJsonString(context.getSettingBlocking(
+            KeyboardSettings[sizeState]!!
+        ))
+        if(savedSettings != null) return savedSettings
+
+        return when(sizeState) {
+            KeyboardSizeSettingKind.FoldableInnerDisplayPortrait,
+            KeyboardSizeSettingKind.FoldableInnerDisplayLandscape ->
+                SavedKeyboardSizingSettings.fromJsonString(context.getSettingBlocking(
+                    KeyboardSettings[KeyboardSizeSettingKind.FoldableInnerDisplay]!!
+                ))
+
+            else -> null
+        }
+    }
+
+    fun getSavedSettings(): SavedKeyboardSizingSettings {
+        val sizeState = sizeStateProvider.currentSizeState
+        return getSavedSettingsForKind(sizeState) ?: getDefaultSettingForKind(sizeState, context)
+    }
 
     fun editSavedSettings(transform: (SavedKeyboardSizingSettings) -> SavedKeyboardSizingSettings) {
         val sizeState = sizeStateProvider.currentSizeState
 
-        val savedSettings = SavedKeyboardSizingSettings.fromJsonString(context.getSettingBlocking(
-            KeyboardSettings[sizeState]!!
-        )) ?: getDefaultSettingForKind(sizeState, context)
+        val savedSettings = getSavedSettingsForKind(sizeState) ?: getDefaultSettingForKind(sizeState, context)
 
         var transformed = transform(savedSettings)
 
@@ -473,7 +504,7 @@ class KeyboardSizingCalculator(val context: Context, val uixManager: UixManager)
 
         return when {
             // Special case: 50% screen height no matter the row count or settings
-            sizeStateProvider.currentSizeState == KeyboardSizeSettingKind.FoldableInnerDisplay
+            sizeStateProvider.currentSizeState.isFoldableInnerDisplay()
                     && foldState != null
                     && foldState.state == FoldingFeature.State.HALF_OPENED
                     && foldState.orientation == FoldingFeature.Orientation.HORIZONTAL -> {

@@ -921,8 +921,13 @@ class LatinIME : InputMethodServiceCompose(), LatinIMELegacy.SuggestionStripCont
 
     override val currentSizeState: KeyboardSizeSettingKind
         get() = when {
-            (foldState.feature != null && isFoldableInnerDisplayAllowed()) ->
-                KeyboardSizeSettingKind.FoldableInnerDisplay
+            (foldState.feature != null && isFoldableInnerDisplayAllowed()) -> {
+                if(resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                    KeyboardSizeSettingKind.FoldableInnerDisplayLandscape
+                } else {
+                    KeyboardSizeSettingKind.FoldableInnerDisplayPortrait
+                }
+            }
 
             resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE ->
                 KeyboardSizeSettingKind.Landscape

@@ -1,6 +1,7 @@
 package org.futo.inputmethod.v2keyboard
 
 import android.content.Context
+import android.content.res.Configuration
 import org.futo.inputmethod.latin.FoldStateProvider
 
 const val KoreanResponsiveLayout = "korean_responsive"
@@ -32,6 +33,10 @@ fun Context.resolveResponsiveKeyboardLayout(layoutName: String): String {
 private fun Context.shouldUseLargeScreenLayout(): Boolean {
     val foldStateProvider = this as? FoldStateProvider
     if (foldStateProvider?.foldState?.feature != null && isFoldableInnerDisplayAllowed()) {
+        return true
+    }
+
+    if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
         return true
     }
 
