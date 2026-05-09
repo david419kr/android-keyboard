@@ -153,6 +153,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
 
     @Nullable
     private Direction mMoakiReturnFlickDirection;
+    private boolean mMoakiReturnFlickReturnedToCenter;
 
     private boolean mIsSlidingCursor;
     private int mStartX;
@@ -468,6 +469,41 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
         default:
             return null;
         }
+    }
+
+    private static int getMoakiDirectionIndex(final Direction direction) {
+        switch (direction) {
+        case West:
+            return 0;
+        case NorthWest:
+            return 1;
+        case North:
+            return 2;
+        case NorthEast:
+            return 3;
+        case East:
+            return 4;
+        case SouthEast:
+            return 5;
+        case South:
+            return 6;
+        case SouthWest:
+            return 7;
+        default:
+            return 0;
+        }
+    }
+
+    private static boolean isMoakiReturnOvershoot(
+            @Nullable final Direction direction, @Nullable final Direction returnDirection) {
+        if (direction == null || returnDirection == null) {
+            return false;
+        }
+
+        final int diff = Math.abs(
+                getMoakiDirectionIndex(direction) - getMoakiDirectionIndex(returnDirection));
+        final int circularDiff = Math.min(diff, 8 - diff);
+        return circularDiff >= 3;
     }
 
     // Note that we need primaryCode argument because the keyboard may be in shifted state and the
@@ -899,6 +935,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
             mIsFlickingKey = !mIsSlidingCursor && key.getHasFlick();
             mFlickDirection = key.flickDirection(0, 0);
             mMoakiReturnFlickDirection = null;
+            mMoakiReturnFlickReturnedToCenter = false;
             mCurrentKey = key;
         }
     }
@@ -1158,10 +1195,20 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
         if(mIsFlickingKey && oldKey != null) {
             final Direction prevDirection = mFlickDirection;
             mFlickDirection = oldKey.flickDirection(x - mStartX, y - mStartY);
-            if (isJapaneseMoakiLayout() && mFlickDirection != null) {
-                final Key flickedKey = oldKey.getFlickKeys().get(mFlickDirection);
-                mMoakiReturnFlickDirection = getMoakiYoonText(flickedKey, oldKey) != null
-                        ? mFlickDirection : null;
+            if (isJapaneseMoakiLayout()) {
+                if (mMoakiReturnFlickDirection != null && mFlickDirection == null) {
+                    mMoakiReturnFlickReturnedToCenter = true;
+                } else if (isMoakiReturnOvershoot(
+                        mFlickDirection, mMoakiReturnFlickDirection)) {
+                    mMoakiReturnFlickReturnedToCenter = true;
+                } else if (!mMoakiReturnFlickReturnedToCenter && mFlickDirection != null) {
+                    final Key flickedKey = oldKey.getFlickKeys().get(mFlickDirection);
+                    mMoakiReturnFlickDirection = getMoakiYoonText(flickedKey, oldKey) != null
+                            ? mFlickDirection : null;
+                    if (mMoakiReturnFlickDirection == null) {
+                        mMoakiReturnFlickReturnedToCenter = false;
+                    }
+                }
             }
 
             if(prevDirection != mFlickDirection) {
@@ -1264,8 +1311,11 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
             final Direction finalDirection = currentKey.flickDirection(x - mStartX, y - mStartY);
             final boolean shouldApplyMoakiReturnFlick =
                     isJapaneseMoakiLayout()
-                            && finalDirection == null
-                            && mMoakiReturnFlickDirection != null;
+                            && mMoakiReturnFlickDirection != null
+                            && (finalDirection == null
+                                    || mMoakiReturnFlickReturnedToCenter
+                                    || isMoakiReturnOvershoot(
+                                            finalDirection, mMoakiReturnFlickDirection));
             final Key flickedKey = shouldApplyMoakiReturnFlick
                     ? currentKey.getFlickKeys().get(mMoakiReturnFlickDirection)
                     : (finalDirection != null
@@ -1283,6 +1333,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
             // Cleanup
             currentKey.flickDirection(0, 0);
             mMoakiReturnFlickDirection = null;
+            mMoakiReturnFlickReturnedToCenter = false;
 
             return;
         }
