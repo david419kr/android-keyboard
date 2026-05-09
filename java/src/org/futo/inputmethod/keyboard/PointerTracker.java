@@ -356,18 +356,32 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
     }
 
     @Nullable
-    private static String getMoakiYoonText(final Key key) {
+    private static String getMoakiYoonText(final Key key, final Key baseKey) {
         if (key == null) {
             return null;
         }
+        final boolean isMoakiWKey = baseKey != null && baseKey.getCode() == 0xFF57; // ｗ
         if (key.getCode() == Constants.CODE_OUTPUT_TEXT) {
             final String outputText = key.getOutputText();
-            if ("\u3046\u3043".equals(outputText)) { // うぃ
+            if (isMoakiWKey && "\u3046\u3043".equals(outputText)) { // うぃ
                 return "\u30F4\u3043"; // ヴぃ
-            } else if ("\u3046\u3047".equals(outputText)) { // うぇ
+            } else if (isMoakiWKey && "\u3046\u3047".equals(outputText)) { // うぇ
                 return "\u30F4\u3047"; // ヴぇ
             }
             return null;
+        }
+
+        if (isMoakiWKey) {
+            switch (key.getCode()) {
+            case 0x3046: // う
+                return "\u30F4"; // ヴ
+            case 0x308F: // わ
+                return "\u30F4\u3041"; // ヴぁ
+            case 0x3092: // を
+                return "\u30F4\u3049"; // ヴぉ
+            default:
+                break;
+            }
         }
 
         switch (key.getCode()) {
@@ -449,10 +463,6 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
             return "\u308A\u3085"; // りゅ
         case 0x308D: // ろ
             return "\u308A\u3087"; // りょ
-        case 0x308F: // わ
-            return "\u30F4\u3041"; // ヴぁ
-        case 0x3092: // を
-            return "\u30F4\u3049"; // ヴぉ
         default:
             return null;
         }
@@ -1142,7 +1152,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
             mFlickDirection = oldKey.flickDirection(x - mStartX, y - mStartY);
             if (isJapaneseMoakiLayout() && mFlickDirection != null) {
                 final Key flickedKey = oldKey.getFlickKeys().get(mFlickDirection);
-                mMoakiReturnFlickDirection = getMoakiYoonText(flickedKey) != null
+                mMoakiReturnFlickDirection = getMoakiYoonText(flickedKey, oldKey) != null
                         ? mFlickDirection : null;
             }
 
@@ -1254,7 +1264,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
                             ? currentKey.getFlickKeys().get(finalDirection)
                             : currentKey);
             final String moakiReturnFlickText = shouldApplyMoakiReturnFlick
-                    ? getMoakiYoonText(flickedKey) : null;
+                    ? getMoakiYoonText(flickedKey, currentKey) : null;
             if (moakiReturnFlickText != null) {
                 sendMoakiReturnFlickText(moakiReturnFlickText, eventTime);
                 callListenerOnRelease(flickedKey, flickedKey.getCode(), false);

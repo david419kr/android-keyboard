@@ -380,6 +380,7 @@ private const val MOAKI_HANDAKUTEN_KEY = ']'
 
 private val MoakiMozcTextOutputs = setOf(
     "ちゃ", "ちゅ", "ちぇ", "ちょ",
+    "ふぁ", "ふぃ", "ふぇ", "ふぉ",
     "うぃ", "うぇ"
 )
 
