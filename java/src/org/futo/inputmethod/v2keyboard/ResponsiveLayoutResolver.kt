@@ -5,10 +5,12 @@ import android.content.res.Configuration
 import org.futo.inputmethod.latin.FoldStateProvider
 
 const val KoreanResponsiveLayout = "korean_responsive"
+const val JapaneseFlickResponsiveLayout = "japanese_flick_responsive"
 const val JapaneseMoakiResponsiveLayout = "japanese_moaki_responsive"
 
 private const val KoreanPhoneLayout = "korean_danmoeum"
 private const val KoreanLargeScreenLayout = "korean_dubeolsik"
+private const val JapaneseFlickPhoneLayout = "flick"
 private const val JapaneseLargeScreenLayout = "japanese_qwerty"
 private const val TabletSmallestWidthDp = 600
 
@@ -18,6 +20,12 @@ fun Context.resolveResponsiveKeyboardLayout(layoutName: String): String {
             KoreanLargeScreenLayout
         } else {
             KoreanPhoneLayout
+        }
+
+        JapaneseFlickResponsiveLayout -> if (shouldUseLargeScreenLayout()) {
+            JapaneseLargeScreenLayout
+        } else {
+            JapaneseFlickPhoneLayout
         }
 
         JapaneseMoakiResponsiveLayout -> if (shouldUseLargeScreenLayout()) {
