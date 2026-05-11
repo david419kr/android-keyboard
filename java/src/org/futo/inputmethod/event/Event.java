@@ -72,6 +72,7 @@ public class Event {
     final public static int NOT_A_CODE_POINT = -1;
     // -1 is a valid key code, so we use 0 here.
     final public static int NOT_A_KEY_CODE = 0;
+    final public static long NOT_AN_EVENT_TIME = -1L;
 
     final private static int FLAG_NONE = 0;
     // This event is a dead character, usually input by a dead key. Examples include dead-acute
@@ -108,6 +109,7 @@ public class Event {
     // future or some other awesome sauce.
     final public int mX;
     final public int mY;
+    final public long mEventTime;
 
     // Some flags that can't go into the key code. It's a bit field of FLAG_*
     final private int mFlags;
@@ -123,12 +125,20 @@ public class Event {
     private Event(final int type, final CharSequence text, final int codePoint, final int keyCode,
             final int x, final int y, final SuggestedWordInfo suggestedWordInfo, final int flags,
             final Event next) {
+        this(type, text, codePoint, keyCode, x, y, suggestedWordInfo, flags, next,
+                NOT_AN_EVENT_TIME);
+    }
+
+    private Event(final int type, final CharSequence text, final int codePoint, final int keyCode,
+            final int x, final int y, final SuggestedWordInfo suggestedWordInfo, final int flags,
+            final Event next, final long eventTime) {
         mEventType = type;
         mText = text;
         mCodePoint = codePoint;
         mKeyCode = keyCode;
         mX = x;
         mY = y;
+        mEventTime = eventTime;
         mSuggestedWordInfo = suggestedWordInfo;
         mFlags = flags;
         mNextEvent = next;
@@ -150,8 +160,16 @@ public class Event {
     @Nonnull
     public static Event createSoftwareKeypressEvent(final int codePoint, final int keyCode,
             final int x, final int y, final boolean isKeyRepeat) {
+        return createSoftwareKeypressEvent(codePoint, keyCode, x, y, isKeyRepeat,
+                NOT_AN_EVENT_TIME);
+    }
+
+    @Nonnull
+    public static Event createSoftwareKeypressEvent(final int codePoint, final int keyCode,
+            final int x, final int y, final boolean isKeyRepeat, final long eventTime) {
         return new Event(EVENT_TYPE_INPUT_KEYPRESS, null /* text */, codePoint, keyCode, x, y,
-                null /* suggestedWordInfo */, isKeyRepeat ? FLAG_REPEAT : FLAG_NONE, null);
+                null /* suggestedWordInfo */, isKeyRepeat ? FLAG_REPEAT : FLAG_NONE, null,
+                eventTime);
     }
 
     @Nonnull
@@ -269,7 +287,7 @@ public class Event {
         // A consumed event should not input any text at all, so we pass the empty string as text.
         return new Event(source.mEventType, source.mText, source.mCodePoint, source.mKeyCode,
                 source.mX, source.mY, source.mSuggestedWordInfo, source.mFlags | FLAG_CONSUMED,
-                source.mNextEvent);
+                source.mNextEvent, source.mEventTime);
     }
 
     /** Should be used by combiners to force composition to finish, because they cannot handle an event */
@@ -277,7 +295,7 @@ public class Event {
     public static Event createResetEvent(final Event source) {
         return new Event(EVENT_TYPE_STOP_COMPOSING, null, NOT_A_CODE_POINT, NOT_A_KEY_CODE,
                 Constants.NOT_A_COORDINATE, Constants.NOT_A_COORDINATE,
-                null, FLAG_NONE, source);
+                null, FLAG_NONE, source, source.mEventTime);
     }
 
     @Nonnull

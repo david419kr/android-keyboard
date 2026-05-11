@@ -34,6 +34,7 @@ import android.media.AudioManager;
 import android.os.Build;
 import android.os.Debug;
 import android.os.IBinder;
+import android.os.SystemClock;
 import android.text.InputType;
 import android.util.Log;
 import android.util.PrintWriterPrinter;
@@ -673,6 +674,12 @@ public class LatinIMELegacy implements KeyboardActionListener,
     @Override
     public void onCodeInput(final int codePoint, final int x, final int y,
             final boolean isKeyRepeat) {
+        onCodeInput(codePoint, x, y, isKeyRepeat, SystemClock.uptimeMillis());
+    }
+
+    @Override
+    public void onCodeInput(final int codePoint, final int x, final int y,
+            final boolean isKeyRepeat, final long eventTime) {
         // TODO: this processing does not belong inside LatinIME, the caller should be doing this.
         final MainKeyboardView mainKeyboardView = mKeyboardSwitcher.getMainKeyboardView();
         // x and y include some padding, but everything down the line (especially native
@@ -683,7 +690,7 @@ public class LatinIMELegacy implements KeyboardActionListener,
         final int keyX = mainKeyboardView.getKeyX(x);
         final int keyY = mainKeyboardView.getKeyY(y);
         final Event event = createSoftwareKeypressEvent(getCodePointForKeyboard(codePoint),
-                keyX, keyY, isKeyRepeat);
+                keyX, keyY, isKeyRepeat, eventTime);
         onEvent(event);
     }
 
@@ -708,6 +715,13 @@ public class LatinIMELegacy implements KeyboardActionListener,
     @Nonnull
     public static Event createSoftwareKeypressEvent(final int keyCodeOrCodePoint, final int keyX,
              final int keyY, final boolean isKeyRepeat) {
+        return createSoftwareKeypressEvent(keyCodeOrCodePoint, keyX, keyY, isKeyRepeat,
+                Event.NOT_AN_EVENT_TIME);
+    }
+
+    @Nonnull
+    public static Event createSoftwareKeypressEvent(final int keyCodeOrCodePoint, final int keyX,
+             final int keyY, final boolean isKeyRepeat, final long eventTime) {
         final int keyCode;
         final int codePoint;
         if (keyCodeOrCodePoint <= 0) {
@@ -717,7 +731,8 @@ public class LatinIMELegacy implements KeyboardActionListener,
             keyCode = Event.NOT_A_KEY_CODE;
             codePoint = keyCodeOrCodePoint;
         }
-        return Event.createSoftwareKeypressEvent(codePoint, keyCode, keyX, keyY, isKeyRepeat);
+        return Event.createSoftwareKeypressEvent(codePoint, keyCode, keyX, keyY, isKeyRepeat,
+                eventTime);
     }
 
     // Called from PointerTracker through the KeyboardActionListener interface

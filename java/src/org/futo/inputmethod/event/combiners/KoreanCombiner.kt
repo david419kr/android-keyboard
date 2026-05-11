@@ -6,6 +6,7 @@ import android.text.TextUtils
 import org.futo.inputmethod.event.Combiner
 import org.futo.inputmethod.event.Event
 import org.futo.inputmethod.latin.common.Constants
+import org.futo.inputmethod.latin.settings.Settings
 
 /**
  * Combiner for Korean/Hangul script.
@@ -13,8 +14,14 @@ import org.futo.inputmethod.latin.common.Constants
  * ㄲ and so on. In this mode, repeated doubleable consonants before a vowel also prefer the next
  * syllable's double initial over the previous syllable's final consonant. This matches common
  * Korean 10-key/단모음 keyboard behavior: ㄴㅏㅂㅂㅏ becomes 나빠, not 납바.
+ * Repeated consonants only take this path within the configured repeated-key interval.
  */
-class KoreanCombiner(private val combineInitials: Boolean = false): Combiner {
+class KoreanCombiner(
+    private val combineInitials: Boolean = false,
+    private val repeatedKeyTimeoutProvider: () -> Int = {
+        Settings.getInstance().current.mKoreanRepeatedKeyTimeout
+    }
+): Combiner {
     // General implementation:
     // A StringBuilder called `buffer` stores a word of uncombined Hangul letters from keypresses.
     // On every keypress these uncombined letters are converted to a list of combined syllable blocks
@@ -101,6 +108,25 @@ class KoreanCombiner(private val combineInitials: Boolean = false): Combiner {
 
 
     private val buffer = StringBuilder() // This buffer holds a single word of UNCOMBINED Hangul letters.
+    private val eventTimes = ArrayList<Long>()
+    private val blockRepeatedKeyBefore = ArrayList<Boolean>()
+
+    private fun shouldBlockRepeatedKeyBefore(char: Char, eventTime: Long): Boolean {
+        if (!combineInitials || buffer.isEmpty()) return false
+        if (buffer.last() != char || !doubleableInitials.contains(char)) return false
+
+        val previousEventTime = eventTimes.lastOrNull() ?: Event.NOT_AN_EVENT_TIME
+        if (previousEventTime == Event.NOT_AN_EVENT_TIME || eventTime == Event.NOT_AN_EVENT_TIME) {
+            return false
+        }
+
+        val timeout = repeatedKeyTimeoutProvider().coerceAtLeast(0)
+        return eventTime - previousEventTime > timeout
+    }
+
+    private fun canCombineRepeatedKeyAt(index: Int): Boolean {
+        return !blockRepeatedKeyBefore.getOrElse(index) { false }
+    }
 
     private fun toBlocks(): CharSequence {
         val combined = StringBuilder()
@@ -125,7 +151,12 @@ class KoreanCombiner(private val combineInitials: Boolean = false): Combiner {
             }
 
             if (vowel == null) { // There is an initial, but no vowel
-                if (combineInitials && initial == char && doubleableInitials.contains(initial)) {
+                if (
+                    combineInitials
+                    && initial == char
+                    && doubleableInitials.contains(initial)
+                    && canCombineRepeatedKeyAt(index - 1)
+                ) {
                     initial = (initial.code + 1).toChar()
                     continue
                 } // If current char is the same as the initial, then double the initial
@@ -179,6 +210,7 @@ class KoreanCombiner(private val combineInitials: Boolean = false): Combiner {
                     combineInitials
                     && currentFinal == char
                     && doubleableInitials.contains(currentFinal)
+                    && canCombineRepeatedKeyAt(index - 1)
                     && index < buffer.length
                     && isVowel(buffer[index])
                 ) {
@@ -264,6 +296,10 @@ class KoreanCombiner(private val combineInitials: Boolean = false): Combiner {
             if (!TextUtils.isEmpty(buffer)) {
                 if (event.mKeyCode == Constants.CODE_DELETE) {
                     buffer.setLength(buffer.length - 1)
+                    if (eventTimes.isNotEmpty()) eventTimes.removeAt(eventTimes.size - 1)
+                    if (blockRepeatedKeyBefore.isNotEmpty()) {
+                        blockRepeatedKeyBefore.removeAt(blockRepeatedKeyBefore.size - 1)
+                    }
                     return Event.createConsumedEvent(event)
                 }
             }
@@ -272,7 +308,9 @@ class KoreanCombiner(private val combineInitials: Boolean = false): Combiner {
             return event
         }
 
+        blockRepeatedKeyBefore.add(shouldBlockRepeatedKeyBefore(keypress, event.mEventTime))
         buffer.append(keypress)
+        eventTimes.add(event.mEventTime)
         return Event.createConsumedEvent(event)
     }
 
@@ -282,5 +320,7 @@ class KoreanCombiner(private val combineInitials: Boolean = false): Combiner {
 
     override fun reset() {
         buffer.setLength(0)
+        eventTimes.clear()
+        blockRepeatedKeyBefore.clear()
     }
 }

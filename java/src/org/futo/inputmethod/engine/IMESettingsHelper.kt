@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import org.futo.inputmethod.engine.general.ChineseIMESettings
 import org.futo.inputmethod.engine.general.JapaneseIMESettings
+import org.futo.inputmethod.engine.general.KoreanIMESettings
 import org.futo.inputmethod.latin.R
 import org.futo.inputmethod.latin.Subtypes
 import org.futo.inputmethod.latin.SubtypesSetting
@@ -24,7 +25,8 @@ private fun isVisible(language: String): Boolean {
 
 val SettingsByLanguage = mapOf(
     "zh" to ChineseIMESettings.menu.copy(visibilityCheck = { isVisible("zh") }),
-    "ja" to JapaneseIMESettings.menu.copy(visibilityCheck = { isVisible("ja") })
+    "ja" to JapaneseIMESettings.menu.copy(visibilityCheck = { isVisible("ja") }),
+    "ko" to KoreanIMESettings.menu.copy(visibilityCheck = { isVisible("ko") })
 )
 
 @Composable

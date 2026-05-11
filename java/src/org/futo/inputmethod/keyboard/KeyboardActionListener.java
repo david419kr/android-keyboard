@@ -59,6 +59,13 @@ public interface KeyboardActionListener {
     public void onCodeInput(int primaryCode, int x, int y, boolean isKeyRepeat);
 
     /**
+     * Send a key code to the listener with the originating key press time in milliseconds.
+     */
+    default void onCodeInput(int primaryCode, int x, int y, boolean isKeyRepeat, long eventTime) {
+        onCodeInput(primaryCode, x, y, isKeyRepeat);
+    }
+
+    /**
      * Sends a string of characters to the listener.
      *
      * @param text the string of characters to be registered.

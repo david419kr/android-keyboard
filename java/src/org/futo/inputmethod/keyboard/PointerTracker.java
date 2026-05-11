@@ -315,6 +315,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
         final boolean ignoreModifierKey = mIsInDraggingFinger && key.isModifier();
         final boolean altersCode = key.getAltCodeWhileTyping() && sTimerProxy.isTypingState();
         final int code = altersCode ? key.getAltCode() : primaryCode;
+        final long keyPressTime = getCurrentKeyPressTime(eventTime);
         if (DEBUG_LISTENER) {
             final String output = code == Constants.CODE_OUTPUT_TEXT
                     ? key.getOutputText() : Constants.printableCode(code);
@@ -332,13 +333,18 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
                 sListener.onTextInput(key.getOutputText());
             } else if (code != Constants.CODE_UNSPECIFIED) {
                 if (mKeyboard.hasProximityCharsCorrection(code)) {
-                    sListener.onCodeInput(code, x, y, isKeyRepeat);
+                    sListener.onCodeInput(code, x, y, isKeyRepeat, keyPressTime);
                 } else {
                     sListener.onCodeInput(code,
-                            Constants.NOT_A_COORDINATE, Constants.NOT_A_COORDINATE, isKeyRepeat);
+                            Constants.NOT_A_COORDINATE, Constants.NOT_A_COORDINATE, isKeyRepeat,
+                            keyPressTime);
                 }
             }
         }
+    }
+
+    private long getCurrentKeyPressTime(final long fallbackEventTime) {
+        return mDownTime > 0 ? mDownTime : fallbackEventTime;
     }
 
     private boolean isJapaneseMoakiLayout() {
@@ -353,7 +359,8 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
             final int codePoint = text.codePointAt(offset);
             sTypingTimeRecorder.onCodeInput(codePoint, eventTime);
             sListener.onCodeInput(codePoint,
-                    Constants.NOT_A_COORDINATE, Constants.NOT_A_COORDINATE, false);
+                    Constants.NOT_A_COORDINATE, Constants.NOT_A_COORDINATE, false,
+                    eventTime);
             offset += Character.charCount(codePoint);
         }
     }

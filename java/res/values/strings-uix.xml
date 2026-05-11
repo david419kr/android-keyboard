@@ -631,6 +631,11 @@
     <string name="japanese_settings_toggle_halfwidth_space">Use half-width space</string>
     <string name="japanese_settings_toggle_halfwidth_space_subtitle">Always use half-width space</string>
 
+    <!-- Specific to Korean input method -->
+    <string name="korean_settings_title">한국어 단모음 설정</string>
+    <string name="korean_settings_repeated_key_interval">연타 판정 시간</string>
+    <string name="korean_settings_repeated_key_interval_subtitle">같은 자음을 몇 ms 안에 다시 눌렀을 때 쌍자음으로 처리할지 정합니다</string>
+
     <!-- Advanced parameters, these are only really relevant for English -->
     <string name="prediction_settings_transformer_advanced_params">Advanced Parameters</string>
     <string name="prediction_settings_transformer_advanced_params_experimental_notice">Options below are experimental and may be removed or changed in the future as internal workings of the app change. Changing these values may have an adverse impact on your experience.

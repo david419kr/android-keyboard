@@ -90,6 +90,8 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
             "pref_vibration_duration_settings";
     public static final String PREF_KEYPRESS_SOUND_VOLUME = "pref_keypress_sound_volume";
     public static final String PREF_KEY_LONGPRESS_TIMEOUT = "pref_key_longpress_timeout";
+    public static final String PREF_KOREAN_REPEATED_KEY_TIMEOUT =
+            "pref_korean_repeated_key_timeout";
     public static final String PREF_ENABLE_EMOJI_ALT_PHYSICAL_KEY =
             "pref_enable_emoji_alt_physical_key";
     public static final String PREF_GESTURE_PREVIEW_TRAIL = "pref_gesture_preview_trail";
@@ -352,6 +354,14 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
 
     public static int readDefaultKeyLongpressTimeout(final Resources res) {
         return res.getInteger(R.integer.config_default_longpress_key_timeout);
+    }
+
+    public static int readKoreanRepeatedKeyTimeout(final SharedPreferences prefs,
+            final Resources res) {
+        final int milliseconds = prefs.getInt(
+                PREF_KOREAN_REPEATED_KEY_TIMEOUT, UNDEFINED_PREFERENCE_VALUE_INT);
+        return (milliseconds != UNDEFINED_PREFERENCE_VALUE_INT) ? milliseconds
+                : res.getInteger(R.integer.config_default_korean_repeated_key_timeout);
     }
 
     public static int readKeypressVibrationDuration(final SharedPreferences prefs,
