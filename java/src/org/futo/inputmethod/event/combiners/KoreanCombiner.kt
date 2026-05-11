@@ -10,7 +10,9 @@ import org.futo.inputmethod.latin.common.Constants
 /**
  * Combiner for Korean/Hangul script.
  * If [combineInitials] is true, pressing ㄱㄱ or any other doubleable initial twice combines it into
- * ㄲ and so on (only in the initial position, final ㄱㄱ is always combined)
+ * ㄲ and so on. In this mode, repeated doubleable consonants before a vowel also prefer the next
+ * syllable's double initial over the previous syllable's final consonant. This matches common
+ * Korean 10-key/단모음 keyboard behavior: ㄴㅏㅂㅂㅏ becomes 나빠, not 납바.
  */
 class KoreanCombiner(private val combineInitials: Boolean = false): Combiner {
     // General implementation:
@@ -108,7 +110,11 @@ class KoreanCombiner(private val combineInitials: Boolean = false): Combiner {
         var final: Char? = null
         var final2: Char? = null // State variables
 
-        for (char in buffer) {
+        var index = 0
+        while (index < buffer.length) {
+            val char = buffer[index]
+            index += 1
+
             if (initial == null) { // Starting case
                 if (!isInitial(char)) {
                     combined.append(char)
@@ -168,6 +174,21 @@ class KoreanCombiner(private val combineInitials: Boolean = false): Combiner {
             }
 
             if (final2 == null) {
+                val currentFinal = final
+                if (
+                    combineInitials
+                    && currentFinal == char
+                    && doubleableInitials.contains(currentFinal)
+                    && index < buffer.length
+                    && isVowel(buffer[index])
+                ) {
+                    combined.append(toBlock(initial, vowel, null))
+                    initial = (currentFinal.code + 1).toChar()
+                    vowel = null
+                    final = null
+                    continue
+                }
+
                 if (mergedClusters.containsKey(Pair(final, char))) {
                     final2 = char
                     continue
