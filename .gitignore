@@ -11,3 +11,8 @@ key.jks
 java/res/raw/mozc.data
 .cxx
 java/src/org/futo/inputmethod/keyboard/internal/KeyboardTextsTable.java
+
+*.dict
+*.combined
+dict/korean_main.sources.json
+tools/korean-dict/build_korean_dict.py
