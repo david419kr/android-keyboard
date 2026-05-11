@@ -85,6 +85,11 @@ Notes:
 - `dictionaries`: compressed wordlist/combined dictionary resources; inspect tooling and call sites before assuming they are packaged directly.
 - `tools`: contributor, dicttool, keyboard text generation, and bundle resource scripts.
 
+## Dictionary Binary Format Notes
+
+- `dict/japanese.dict` and bundled Japanese `builtin_mozc_data.dict` are Mozc DataSet binaries, not LatinIME `main.dict` files or line-editable word lists. The first 4-byte magic is `EF 4D 4F 5A` (`0xef4d4f5a`, `\xEFMOZ`), followed by the rest of the Mozc signature such as `C\r\n`; `ImportResourceActivity.kt` detects this as a Japanese dictionary, and `JapaneseIME.kt` passes the path or APK asset offset/length directly to `MozcJNI.load(...)`. The container has aligned Mozc chunks such as `pos_matcher`, `conn`, `dict`, `sugg`, `symbol_*`, `emoji_*`, `zero_query_*`, `usage_*`, plus protobuf `DataSetMetadata`, footer metadata size, SHA-1, and file size. The `dict` chunk is itself a Mozc `DictionaryFile` with value trie, token array, key trie, and frequent POS sections. Do not treat it as an AOSP/FUTO `0x9BC13AFE` binary dictionary or combined word list.
+- `dict/korean_emoji.dict` is the AOSP/FUTO LatinIME binary dictionary format. Magic is `9B C1 3A FE` (`0x9bc13afe`), format version `202`, header size `0x68`, and header attributes include `dictionary=emoji:ko`, `description=Emoji for Korean words`, `locale=ko`, and `version=19`. Body data starts after the header and uses the v2 Patricia trie layout in `FormatSpec.java`: PtNode arrays, compact code point encoding, terminal probabilities, child offsets, and shortcut lists. The inspected file has 2,763 node arrays, 11,871 nodes, and 10,792 terminal shortcut records mapping Korean/English trigger text to emoji and emoji glyphs back to Korean descriptions.
+
 ## Japanese Moaki Custom Layout Notes
 
 The custom Japanese Moaki responsive layout is intentionally split across several files. Check all of these before changing it:
