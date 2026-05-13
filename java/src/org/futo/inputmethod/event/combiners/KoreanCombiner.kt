@@ -128,6 +128,15 @@ class KoreanCombiner(
         return !blockRepeatedKeyBefore.getOrElse(index) { false }
     }
 
+    private fun shouldStartRepeatedInitialAt(char: Char, repeatedIndex: Int): Boolean {
+        return combineInitials
+                && doubleableInitials.contains(char)
+                && repeatedIndex + 1 < buffer.length
+                && buffer[repeatedIndex] == char
+                && canCombineRepeatedKeyAt(repeatedIndex)
+                && isVowel(buffer[repeatedIndex + 1])
+    }
+
     private fun toBlocks(): CharSequence {
         val combined = StringBuilder()
 
@@ -216,6 +225,14 @@ class KoreanCombiner(
                 ) {
                     combined.append(toBlock(initial, vowel, null))
                     initial = (currentFinal.code + 1).toChar()
+                    vowel = null
+                    final = null
+                    continue
+                }
+
+                if (shouldStartRepeatedInitialAt(char, index)) {
+                    combined.append(toBlock(initial, vowel, final))
+                    initial = char
                     vowel = null
                     final = null
                     continue

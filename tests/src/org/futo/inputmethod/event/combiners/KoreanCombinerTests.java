@@ -67,10 +67,42 @@ public class KoreanCombinerTests extends TestCase {
                         0, 10, 20, 50, 60));
     }
 
+    public void testFastRepeatedClusterCandidatePrefersDoubleInitialBeforeVowel() {
+        assertEquals("\uC548\uC9F1\uB2E4\uB9AC",
+                compose(newCombiner(),
+                        "\u3147\u314F\u3134\u3148\u3148\u314F\u3147\u3137\u314F\u3139\u3163",
+                        0, 10, 20, 30, 60, 70, 80, 90, 100, 110, 120));
+        assertEquals("\uC67C\uCABD",
+                compose(newCombiner(), "\u3147\u3157\u3163\u3134\u3148\u3148\u3157\u3131",
+                        0, 10, 20, 30, 40, 70, 80, 90));
+        assertEquals("\uC624\uB978\uCABD",
+                compose(newCombiner(), "\u3147\u3157\u3139\u3161\u3134\u3148\u3148\u3157\u3131",
+                        0, 10, 20, 30, 40, 50, 80, 90, 100));
+    }
+
     public void testSlowRepeatedFinalKeepsFinalConsonant() {
         assertEquals("\uB0A9\uBC14",
                 compose(newCombiner(), "\u3134\u314F\u3142\u3142\u314F",
                         0, 10, 20, 250, 260));
+    }
+
+    public void testSlowRepeatedClusterCandidateKeepsCompoundFinal() {
+        assertEquals("\uC549\uC7A5\uB2E4\uB9AC",
+                compose(newCombiner(),
+                        "\u3147\u314F\u3134\u3148\u3148\u314F\u3147\u3137\u314F\u3139\u3163",
+                        0, 10, 20, 30, 250, 260, 270, 280, 290, 300, 310));
+        assertEquals("\uC67D\uC871",
+                compose(newCombiner(), "\u3147\u3157\u3163\u3134\u3148\u3148\u3157\u3131",
+                        0, 10, 20, 30, 40, 250, 260, 270));
+        assertEquals("\uC624\uB979\uC871",
+                compose(newCombiner(), "\u3147\u3157\u3139\u3161\u3134\u3148\u3148\u3157\u3131",
+                        0, 10, 20, 30, 40, 50, 260, 270, 280));
+    }
+
+    public void testNonRepeatedCompoundFinalStillCombines() {
+        assertEquals("\uC549\uC544",
+                compose(newCombiner(), "\u3147\u314F\u3134\u3148\u3147\u314F",
+                        0, 10, 20, 30, 40, 50));
     }
 
     public void testFastRepeatedGiyeokProducesDoubleInitial() {
