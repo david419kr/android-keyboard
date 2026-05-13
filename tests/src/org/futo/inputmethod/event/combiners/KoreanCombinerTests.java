@@ -20,6 +20,7 @@ import junit.framework.TestCase;
 
 import org.futo.inputmethod.event.Event;
 import org.futo.inputmethod.latin.common.Constants;
+import org.futo.inputmethod.latin.settings.Settings;
 
 import java.util.ArrayList;
 
@@ -29,10 +30,19 @@ public class KoreanCombinerTests extends TestCase {
     private static final int TIMEOUT_MS = 200;
 
     private KoreanCombiner newCombiner() {
+        return newCombiner(Settings.BACKSPACE_MODE_CHARACTERS);
+    }
+
+    private KoreanCombiner newCombiner(final int backspaceMode) {
         return new KoreanCombiner(true, new Function0<Integer>() {
             @Override
             public Integer invoke() {
                 return TIMEOUT_MS;
+            }
+        }, new Function0<Integer>() {
+            @Override
+            public Integer invoke() {
+                return backspaceMode;
             }
         });
     }
@@ -44,9 +54,17 @@ public class KoreanCombinerTests extends TestCase {
     }
 
     private static Event delete(final long eventTime) {
+        return delete(eventTime, false /* isKeyRepeat */);
+    }
+
+    private static Event delete(final long eventTime, final boolean isKeyRepeat) {
         return Event.createSoftwareKeypressEvent(Event.NOT_A_CODE_POINT, Constants.CODE_DELETE,
                 Constants.NOT_A_COORDINATE, Constants.NOT_A_COORDINATE,
-                false /* isKeyRepeat */, eventTime);
+                isKeyRepeat, eventTime);
+    }
+
+    private static Event repeatDelete(final long eventTime) {
+        return delete(eventTime, true /* isKeyRepeat */);
     }
 
     private static String compose(final KoreanCombiner combiner, final String input,
@@ -146,5 +164,66 @@ public class KoreanCombinerTests extends TestCase {
         combiner.processEvent(previousEvents, event);
         previousEvents.add(event);
         assertEquals("\uAC00", combiner.getCombiningStateFeedback().toString());
+    }
+
+    public void testWordModeRepeatedBackspacePassesThroughComposingBuffer() {
+        final KoreanCombiner combiner = newCombiner(Settings.BACKSPACE_MODE_WORDS);
+        final ArrayList<Event> previousEvents = new ArrayList<>();
+
+        Event event = key('\u3131', 0);
+        combiner.processEvent(previousEvents, event);
+        previousEvents.add(event);
+
+        event = key('\u314F', 10);
+        combiner.processEvent(previousEvents, event);
+        previousEvents.add(event);
+        assertEquals("\uAC00", combiner.getCombiningStateFeedback().toString());
+
+        final Event deleteEvent = repeatDelete(20);
+        final Event processedEvent = combiner.processEvent(previousEvents, deleteEvent);
+        previousEvents.add(deleteEvent);
+
+        assertSame(deleteEvent, processedEvent);
+        assertFalse(processedEvent.isConsumed());
+        assertTrue(processedEvent.isKeyRepeat());
+        assertEquals("\uAC00", combiner.getCombiningStateFeedback().toString());
+    }
+
+    public void testWordModeNonRepeatedBackspaceStillDeletesOneJamo() {
+        final KoreanCombiner combiner = newCombiner(Settings.BACKSPACE_MODE_WORDS);
+        final ArrayList<Event> previousEvents = new ArrayList<>();
+
+        Event event = key('\u3131', 0);
+        combiner.processEvent(previousEvents, event);
+        previousEvents.add(event);
+
+        event = key('\u314F', 10);
+        combiner.processEvent(previousEvents, event);
+        previousEvents.add(event);
+        assertEquals("\uAC00", combiner.getCombiningStateFeedback().toString());
+
+        final Event processedEvent = combiner.processEvent(previousEvents, delete(20));
+
+        assertTrue(processedEvent.isConsumed());
+        assertEquals("\u3131", combiner.getCombiningStateFeedback().toString());
+    }
+
+    public void testCharacterModeRepeatedBackspaceStillDeletesOneJamo() {
+        final KoreanCombiner combiner = newCombiner(Settings.BACKSPACE_MODE_CHARACTERS);
+        final ArrayList<Event> previousEvents = new ArrayList<>();
+
+        Event event = key('\u3131', 0);
+        combiner.processEvent(previousEvents, event);
+        previousEvents.add(event);
+
+        event = key('\u314F', 10);
+        combiner.processEvent(previousEvents, event);
+        previousEvents.add(event);
+        assertEquals("\uAC00", combiner.getCombiningStateFeedback().toString());
+
+        final Event processedEvent = combiner.processEvent(previousEvents, repeatDelete(20));
+
+        assertTrue(processedEvent.isConsumed());
+        assertEquals("\u3131", combiner.getCombiningStateFeedback().toString());
     }
 }

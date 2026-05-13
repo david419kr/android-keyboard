@@ -16,10 +16,13 @@ import org.futo.inputmethod.latin.settings.Settings
  * Korean 10-key/단모음 keyboard behavior: ㄴㅏㅂㅂㅏ becomes 나빠, not 납바.
  * Repeated consonants only take this path within the configured repeated-key interval.
  */
-class KoreanCombiner(
+class KoreanCombiner @JvmOverloads constructor(
     private val combineInitials: Boolean = false,
     private val repeatedKeyTimeoutProvider: () -> Int = {
         Settings.getInstance().current.mKoreanRepeatedKeyTimeout
+    },
+    private val backspaceModeProvider: () -> Int = {
+        Settings.getInstance().current.mBackspaceMode
     }
 ): Combiner {
     // General implementation:
@@ -126,6 +129,10 @@ class KoreanCombiner(
 
     private fun canCombineRepeatedKeyAt(index: Int): Boolean {
         return !blockRepeatedKeyBefore.getOrElse(index) { false }
+    }
+
+    private fun shouldPassBackspaceToInputLogic(event: Event): Boolean {
+        return event.isKeyRepeat && backspaceModeProvider() == Settings.BACKSPACE_MODE_WORDS
     }
 
     private fun shouldStartRepeatedInitialAt(char: Char, repeatedIndex: Int): Boolean {
@@ -312,6 +319,9 @@ class KoreanCombiner(
         if (!isHangulLetter(keypress)) {
             if (!TextUtils.isEmpty(buffer)) {
                 if (event.mKeyCode == Constants.CODE_DELETE) {
+                    if (shouldPassBackspaceToInputLogic(event)) {
+                        return event
+                    }
                     buffer.setLength(buffer.length - 1)
                     if (eventTimes.isNotEmpty()) eventTimes.removeAt(eventTimes.size - 1)
                     if (blockRepeatedKeyBefore.isNotEmpty()) {
