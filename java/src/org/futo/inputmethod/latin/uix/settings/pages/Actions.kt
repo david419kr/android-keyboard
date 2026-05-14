@@ -65,8 +65,8 @@ val ActionsScreen = UserSettingsMenu(
                         .toMutableMap()
 
                     if(to) {
-                        // Put an emoji key as the default.
-                        actionMap[ActionCategory.ActionKey] = listOf(EmojiAction)
+                        // Put a language switch key as the default.
+                        actionMap[ActionCategory.ActionKey] = listOf(SwitchLanguageAction)
 
                         // In case it was assigned anywhere else, it will be removed automatically
                         // when we're removing duplicates. The ActionKey has the highest precedence

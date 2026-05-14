@@ -651,7 +651,7 @@ val NumberRowSettingMenu = UserSettingsMenu(
         userSettingDecorationOnly {
             PrimarySettingToggleDataStoreItem(
                 stringResource(R.string.keyboard_settings_show_number_row),
-                useSharedPrefsBool(Settings.PREF_ENABLE_NUMBER_ROW, false)
+                useSharedPrefsBool(Settings.PREF_ENABLE_NUMBER_ROW, true)
             )
         },
 
@@ -660,11 +660,11 @@ val NumberRowSettingMenu = UserSettingsMenu(
             default = {false},
             key = Settings.PREF_USE_WESTERN_NUMERALS,
         ).copy(visibilityCheck = {
-            useSharedPrefsBool(Settings.PREF_ENABLE_NUMBER_ROW, false).value
+            useSharedPrefsBool(Settings.PREF_ENABLE_NUMBER_ROW, true).value
         }),
 
         UserSetting(name = R.string.keyboard_settings_number_row_style, visibilityCheck = {
-            useSharedPrefsBool(Settings.PREF_ENABLE_NUMBER_ROW, false).value
+            useSharedPrefsBool(Settings.PREF_ENABLE_NUMBER_ROW, true).value
         }) {
             val context = LocalContext.current
             val scheme = LocalKeyboardScheme.current
@@ -758,7 +758,7 @@ val KeyboardSettingsMenu = UserSettingsMenu(
             title = R.string.keyboard_settings_show_number_row,
             subtitle = R.string.keyboard_settings_show_number_row_subtitle,
             key = Settings.PREF_ENABLE_NUMBER_ROW,
-            default = {false},
+            default = {true},
             icon = { Text("123", style = Typography.Body.MediumMl, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
                 modifier = Modifier.clearAndSetSemantics{}) },
             submenu = NumberRowSettingMenu.navPath
@@ -767,7 +767,7 @@ val KeyboardSettingsMenu = UserSettingsMenu(
             title = R.string.keyboard_settings_show_arrow_row,
             subtitle = R.string.keyboard_settings_show_arrow_row_subtitle,
             key = Settings.PREF_ENABLE_ARROW_ROW,
-            default = {false},
+            default = {true},
             icon = {
                 Icon(painterResource(id = R.drawable.direction_arrows), contentDescription = null)
             }

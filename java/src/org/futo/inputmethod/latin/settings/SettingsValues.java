@@ -169,12 +169,12 @@ public class SettingsValues {
                         RegistryKt.getDefaultActionKey()
                 ));
         mShowsActionKey = mActionKeyId != -1;
-        mIsNumberRowEnabledByUser = prefs.getBoolean(Settings.PREF_ENABLE_NUMBER_ROW, false);
+        mIsNumberRowEnabledByUser = prefs.getBoolean(Settings.PREF_ENABLE_NUMBER_ROW, true);
         mIsNumberRowEnabled = mIsNumberRowEnabledByUser
                 || (inputAttributes.mIsPasswordField && !inputAttributes.mIsNumericalPasswordField)
                 || inputAttributes.mIsEmailField;
         mUseLocalNumbers = !prefs.getBoolean(Settings.PREF_USE_WESTERN_NUMERALS, false);
-        mIsArrowRowEnabled = prefs.getBoolean(Settings.PREF_ENABLE_ARROW_ROW, false);
+        mIsArrowRowEnabled = prefs.getBoolean(Settings.PREF_ENABLE_ARROW_ROW, true);
         mIsUsingAlternativePeriodKey = prefs.getBoolean(Settings.PREF_ENABLE_ALT_PERIOD_KEY, false) && SettingsValues.altPeriodKeyAllowedForLocale(mLocale);
         mUseDictionaryKeyBoosting = prefs.getBoolean(Settings.PREF_USE_DICT_KEY_BOOSTING, true);
         mUseContactsDict = prefs.getBoolean(Settings.PREF_KEY_USE_CONTACTS_DICT, true);
