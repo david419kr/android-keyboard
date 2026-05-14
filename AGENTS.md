@@ -45,16 +45,14 @@ $env:PYTHONUTF8="1"
 
 `PYTHONUTF8=1` is needed because `updateLocales` reads UTF-8 locale JSON files; without it, Windows Python may default to `cp949` and fail with `UnicodeDecodeError`. The Android SDK path above was verified locally. Gradle installed or used SDK Platform 35, Build Tools 35.0.0, NDK `28.2.13676358`, and CMake 3.22.1 during the successful `assembleUnstableDebug` run.
 
-If `voiceinput-shared/src/main/ml` hangs during submodule cloning, the required model can be placed manually:
+For `voiceinput-shared/src/main/ml`, prefer the normal submodule checkout path:
 
 ```powershell
-New-Item -ItemType Directory -Force voiceinput-shared\src\main\ml
-Invoke-WebRequest `
-  -Uri "https://gitlab.futo.org/keyboard/voice-input-models/-/raw/main/tiny_en_acft_q8_0.bin.not.tflite" `
-  -OutFile "voiceinput-shared\src\main\ml\tiny_en_acft_q8_0.bin.not.tflite"
+git submodule sync -- voiceinput-shared/src/main/ml
+git submodule update --init --checkout voiceinput-shared/src/main/ml
 ```
 
-The expected file size observed locally is `43,550,795` bytes. This is enough for Gradle resource/model binding even if the Git submodule checkout remains partial.
+This submodule was normalized locally at commit `7692bc6096c51c44beba716a3c429ff09dbfffd9`. Do not leave a manually downloaded `tiny_en_acft_q8_0.bin.not.tflite` as an untracked file; if a stale manual fallback blocks checkout, verify it matches the submodule blob before moving or removing it.
 
 Useful task-specific commands:
 
