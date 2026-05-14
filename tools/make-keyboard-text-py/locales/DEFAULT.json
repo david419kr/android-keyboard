@@ -539,7 +539,7 @@
         "9": "!text/keyspec_left_parenthesis",
         "0": "!text/keyspec_right_parenthesis",
 
-        "q": "_",
+        "q": "&",
         "w": "\\\\",
         "e": "|",
         "r": "=",
@@ -557,8 +557,8 @@
             "$"
         ],
         "f": "\\%",
-        "g": ["_", "&", "|"],
-        "h": ["-", "–", "—", "_"],
+        "g": ["-", "–", "—", "_"],
+        "h": ["_", "&", "|"],
         "j": ["+", "="],
         "k": ["!text/keyspec_left_parenthesis", "!text/keyspec_left_square_bracket", "!text/keyspec_left_curly_bracket", "!text/keyspec_less_than"],
         "l": ["!text/keyspec_right_parenthesis", "!text/keyspec_right_square_bracket", "!text/keyspec_right_curly_bracket", "!text/keyspec_greater_than"],
