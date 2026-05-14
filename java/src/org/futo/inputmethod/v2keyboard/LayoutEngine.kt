@@ -93,7 +93,7 @@ val ArrowRow = Row(
         showPopup = false,
         repeatableEnabled = true
     ),
-    splittable = false,
+    splittable = true,
     rowHeight = 0.8
 )
 
