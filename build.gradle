@@ -153,7 +153,39 @@ tasks.register('updateContributors') {
     }
 }
 
+def koreanDictionaryResDir = file("$buildDir/generated/res-korean-dictionary")
+def prepareKoreanDictionaryResource = tasks.register('prepareKoreanDictionaryResource') {
+    def sourceDict = file('dictionaries/korean_main.dict')
+    inputs.file sourceDict
+    outputs.dir koreanDictionaryResDir
+
+    doLast {
+        if (!sourceDict.isFile()) {
+            throw new GradleException("Missing Korean dictionary: ${sourceDict}")
+        }
+
+        if (koreanDictionaryResDir.exists()) {
+            koreanDictionaryResDir.deleteDir()
+        }
+
+        def rawDefaultDir = new File(koreanDictionaryResDir, 'raw')
+        def rawKoDir = new File(koreanDictionaryResDir, 'raw-ko')
+        rawDefaultDir.mkdirs()
+        rawKoDir.mkdirs()
+
+        // Keep a default stub so the localized resource id exists, while ko gets the real dictionary.
+        new File(rawDefaultDir, 'main_ko.dict').bytes = new byte[0]
+
+        copy {
+            from sourceDict
+            into rawKoDir
+            rename { 'main_ko.dict' }
+        }
+    }
+}
+
 preBuild.dependsOn updateLocales
+preBuild.dependsOn prepareKoreanDictionaryResource
 
 android {
     namespace 'org.futo.inputmethod.latin'
@@ -303,6 +335,7 @@ android {
         main {
             res.srcDirs = [
                     'java/res',
+                    koreanDictionaryResDir,
                     translationsWithoutEngValues('translations/core'),
                     translationsWithoutEngValues('translations/core-ign'),
                     'java/res-large'

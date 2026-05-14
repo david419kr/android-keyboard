@@ -58,6 +58,7 @@ android {
     sourceSets {
         main {
             res.srcDirs = ['../voiceinput-shared/src/main/res', translationsWithoutEngValues('../translations/voiceinput')]
+            mlModels.srcDirs = []
         }
     }
 

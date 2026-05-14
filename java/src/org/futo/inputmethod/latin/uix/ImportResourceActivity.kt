@@ -570,7 +570,7 @@ object ResourceHelper {
 
     fun tryFindingVoiceInputModelForLocale(context: Context, locale: Locale): ModelLoader? {
         val file = runBlocking { findFileForKind(context, locale, FileKind.VoiceInput) }
-            ?: return BuiltInVoiceInputFallbacks[locale.language]
+            ?: return BuiltInVoiceInputFallbacks[locale.language]?.takeIf { it.exists(context) }
 
         return ModelFileFile(R.string.settings_external_model_name, file)
     }
