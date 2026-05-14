@@ -131,6 +131,111 @@ private val SPAN_PARTIAL_SUGGESTION_COLOR = BackgroundColorSpan(0x194DB6AC)
 // Underline.
 private val SPAN_UNDERLINE = UnderlineSpan()
 
+private const val JAPANESE_WORD_DELETE_LOOKBACK = 96
+
+private data class TextRange(val start: Int, val end: Int)
+
+private fun isWhitespaceOnly(text: String, start: Int, end: Int): Boolean {
+    if(start >= end) return false
+
+    var offset = start
+    while(offset < end) {
+        val codePoint = text.codePointAt(offset)
+        if(!Character.isWhitespace(codePoint) && !Character.isSpaceChar(codePoint)) {
+            return false
+        }
+        offset += Character.charCount(codePoint)
+    }
+
+    return true
+}
+
+private fun isPunctuationOrSymbol(codePoint: Int): Boolean {
+    return when(Character.getType(codePoint)) {
+        Character.CONNECTOR_PUNCTUATION.toInt(),
+        Character.DASH_PUNCTUATION.toInt(),
+        Character.START_PUNCTUATION.toInt(),
+        Character.END_PUNCTUATION.toInt(),
+        Character.INITIAL_QUOTE_PUNCTUATION.toInt(),
+        Character.FINAL_QUOTE_PUNCTUATION.toInt(),
+        Character.OTHER_PUNCTUATION.toInt(),
+        Character.MATH_SYMBOL.toInt(),
+        Character.CURRENCY_SYMBOL.toInt(),
+        Character.MODIFIER_SYMBOL.toInt(),
+        Character.OTHER_SYMBOL.toInt() -> true
+        else -> false
+    }
+}
+
+private fun getTrailingPunctuationOrSymbolLength(text: String, start: Int, end: Int): Int {
+    var offset = end
+    while(offset > start) {
+        val codePoint = text.codePointBefore(offset)
+        if(!isPunctuationOrSymbol(codePoint)) break
+
+        offset -= Character.charCount(codePoint)
+    }
+
+    return end - offset
+}
+
+fun computeJapaneseWordDeleteLengthBeforeCursor(text: CharSequence): Int {
+    val value = text.toString()
+    if(value.isEmpty()) return 0
+
+    val iterator = BreakIterator.getWordInstance(Locale.JAPANESE)
+    iterator.setText(value)
+
+    val ranges = ArrayList<TextRange>()
+    var start = iterator.first()
+    var end = iterator.next()
+    while(end != BreakIterator.DONE) {
+        if(start >= 0 && end > start) {
+            ranges.add(TextRange(start, end))
+        }
+        start = end
+        end = iterator.next()
+    }
+
+    if(ranges.isEmpty()) return 0
+
+    var rangeIndex = ranges.lastIndex
+    val lastRange = ranges[rangeIndex]
+    if(!isWhitespaceOnly(value, lastRange.start, lastRange.end)) {
+        val punctuationLength = getTrailingPunctuationOrSymbolLength(
+            value,
+            lastRange.start,
+            lastRange.end
+        )
+        if(punctuationLength > 0) return punctuationLength
+
+        return lastRange.end - lastRange.start
+    }
+
+    var trailingWhitespaceStart = lastRange.start
+    while(rangeIndex >= 0) {
+        val range = ranges[rangeIndex]
+        if(!isWhitespaceOnly(value, range.start, range.end)) break
+
+        trailingWhitespaceStart = range.start
+        rangeIndex--
+    }
+
+    if(rangeIndex < 0) return value.length - trailingWhitespaceStart
+
+    val precedingRange = ranges[rangeIndex]
+    val punctuationLength = getTrailingPunctuationOrSymbolLength(
+        value,
+        precedingRange.start,
+        precedingRange.end
+    )
+    if(punctuationLength > 0) {
+        return punctuationLength + value.length - trailingWhitespaceStart
+    }
+
+    return value.length - precedingRange.start
+}
+
 internal fun getInputFieldType(attribute: EditorInfo): InputFieldType {
     val inputType = attribute.inputType
     if (MozcUtil.isPasswordField(inputType)) {
@@ -719,6 +824,8 @@ class JapaneseIME(val helper: IMEHelper) : IMEInterface {
     private fun maybeProcessDelete(keyCode: Int): Boolean {
         if(keyCode != Constants.CODE_DELETE) return false
 
+        val inputConnection = helper.getCurrentInputConnection() ?: return true
+
         // If we have a selection, send DEL event to delete the selection
         if(selectionTracker.lastSelectionEnd != selectionTracker.lastSelectionStart) {
             sendDownUpKeyEvent(
@@ -726,7 +833,7 @@ class JapaneseIME(val helper: IMEHelper) : IMEInterface {
                 0
             )
         } else {
-            val text = helper.getCurrentInputConnection()?.getTextBeforeCursor(8, 0).toString()
+            val text = inputConnection.getTextBeforeCursor(8, 0)?.toString() ?: ""
             val bi = BreakIterator.getCharacterInstance()
 
             bi.setText(text)
@@ -734,10 +841,70 @@ class JapaneseIME(val helper: IMEHelper) : IMEInterface {
             val prev = bi.previous()
 
             if(prev == -1 || end == -1) {
-                helper.getCurrentInputConnection()?.deleteSurroundingText(1, 0)
+                inputConnection.deleteSurroundingText(1, 0)
             } else {
-                helper.getCurrentInputConnection()?.deleteSurroundingText(end - prev, 0)
+                inputConnection.deleteSurroundingText(end - prev, 0)
             }
+        }
+        return true
+    }
+
+    private fun isBackspaceWordDeleteEvent(event: Event): Boolean {
+        return event.mKeyCode == Constants.CODE_DELETE
+                && event.isKeyRepeat
+                && Settings.getInstance().current.mBackspaceMode == Settings.BACKSPACE_MODE_WORDS
+    }
+
+    private fun clearMozcPreeditForWordDelete(): Boolean {
+        executor.removePendingEvaluations()
+        executor.resetContext()
+        evalPending.set(false)
+
+        if(helper.getCurrentInputConnection()?.setComposingText("", 0) == false) {
+            Log.e(TAG, "Failed to set composing text.")
+        }
+
+        hasPreedit = false
+        currentPreeditText = ""
+        currentPreeditCursor = 0
+        currentPreeditIsConversion = false
+
+        selectionTracker.onConfigurationChanged()
+        setNeutralSuggestionStrip()
+        helper.updateUiInputState(true)
+        helper.keyboardSwitcher.requestUpdatingShiftState(getCurrentAutoCapsState())
+        return true
+    }
+
+    private fun maybeHandleBackspaceWordDelete(event: Event): Boolean {
+        if(!isBackspaceWordDeleteEvent(event)) return false
+
+        if(hasPreedit) {
+            return clearMozcPreeditForWordDelete()
+        }
+
+        if(selectionTracker.lastSelectionEnd != selectionTracker.lastSelectionStart) {
+            sendDownUpKeyEvent(
+                KeyEvent.KEYCODE_DEL,
+                0
+            )
+            return true
+        }
+
+        val inputConnection = helper.getCurrentInputConnection() ?: return true
+        val text = inputConnection
+            .getTextBeforeCursor(JAPANESE_WORD_DELETE_LOOKBACK, 0)
+            ?.toString()
+            ?: ""
+        val deleteLength = computeJapaneseWordDeleteLengthBeforeCursor(text)
+
+        if(deleteLength <= 0) {
+            maybeProcessDelete(Constants.CODE_DELETE)
+            return true
+        }
+
+        if(!inputConnection.deleteSurroundingText(deleteLength, 0)) {
+            maybeProcessDelete(Constants.CODE_DELETE)
         }
         return true
     }
@@ -1355,6 +1522,10 @@ class JapaneseIME(val helper: IMEHelper) : IMEInterface {
                             && (getCurrentConfigSpec() != configSpec))
                 {
                     updateConfig(false)
+                }
+
+                if(maybeHandleBackspaceWordDelete(event)) {
+                    return
                 }
 
                 if(maybeHandleJapaneseFullWidthAlnum(event)) {
