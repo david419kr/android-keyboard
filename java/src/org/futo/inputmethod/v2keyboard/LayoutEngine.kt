@@ -13,6 +13,8 @@ import org.futo.inputmethod.latin.uix.DynamicThemeProvider
 import kotlin.math.roundToInt
 
 val EPS = 1e-5.toFloat()
+private const val SPLIT_SPACEBAR_LEFT_EXTENSION_KEYS = 1.5f
+private const val SPLIT_SPACEBAR_RIGHT_EXTENSION_KEYS = 1.0f
 
 // Entries are either a key, or a gap.
 // Gaps are added if the row is mostly regular-width keys and there are fewer keys in this row
@@ -290,7 +292,8 @@ data class LayoutEngine(
         computedRowWithoutWidths: List<LayoutEntry.Key>,
         widths: Map<KeyWidth, Float>,
         height: Float,
-        splittable: Boolean
+        splittable: Boolean,
+        splitSpacebar: Boolean
     ): LayoutRow {
         val computedRow = computedRowWithoutWidths.map { key ->
             LayoutEntry.Key(key.data, widths[key.data.width]!!)
@@ -299,7 +302,8 @@ data class LayoutEngine(
         val totalRowWidth = computedRow.sumOf { it.widthPx.toDouble() }.toFloat()
 
         val rowLayoutWidth = if(splittable) { layoutWidth } else { unsplitLayoutWidth }
-        val entries = mergeDuplicates(computedRow.addGap(rowLayoutWidth - totalRowWidth))
+        val entries = (if(splitSpacebar) { splitSpacebarRow(computedRow) } else { null }) ?:
+                mergeDuplicates(computedRow.addGap(rowLayoutWidth - totalRowWidth))
 
         return LayoutRow(
             entries = entries,
@@ -307,6 +311,52 @@ data class LayoutEngine(
             height = height,
             splittable = splittable
         )
+    }
+
+    private fun splitSpacebarRow(row: List<LayoutEntry.Key>): List<LayoutEntry>? {
+        if(!isSplitLayout) return null
+
+        val spaceIndices = row.mapIndexedNotNull { i, entry ->
+            if(entry.data.code == Constants.CODE_SPACE && entry.data.style == KeyVisualStyle.Spacebar) {
+                i
+            } else {
+                null
+            }
+        }
+
+        if(spaceIndices.size != 1) return null
+
+        val spaceIndex = spaceIndices.first()
+        val spaceKey = row[spaceIndex]
+        val leftEntries = row.subList(0, spaceIndex)
+        val rightEntries = row.subList(spaceIndex + 1, row.size)
+
+        val halfSplitWidth = layoutWidth / 2.0f
+        val leftFixedWidth = leftEntries.sumOf { it.widthPx.toDouble() }.toFloat()
+        val rightFixedWidth = rightEntries.sumOf { it.widthPx.toDouble() }.toFloat()
+        val leftSpaceWidth = halfSplitWidth - leftFixedWidth
+        val rightSpaceWidth = halfSplitWidth - rightFixedWidth
+        val middleGap = params.mId.mWidth - layoutWidth
+
+        if(leftSpaceWidth < minimumKeyWidth || rightSpaceWidth < minimumKeyWidth || middleGap <= 0) {
+            return null
+        }
+
+        val requestedLeftExtension = bottomRegularKeyWidth * SPLIT_SPACEBAR_LEFT_EXTENSION_KEYS
+        val requestedRightExtension = bottomRegularKeyWidth * SPLIT_SPACEBAR_RIGHT_EXTENSION_KEYS
+        val requestedExtension = requestedLeftExtension + requestedRightExtension
+        val extensionScale = minOf(1.0f, middleGap.toFloat() / requestedExtension)
+        val leftExtension = requestedLeftExtension * extensionScale
+        val rightExtension = requestedRightExtension * extensionScale
+        val adjustedMiddleGap = middleGap - leftExtension - rightExtension
+
+        return buildList {
+            addAll(leftEntries)
+            add(LayoutEntry.Key(spaceKey.data, leftSpaceWidth + leftExtension))
+            add(LayoutEntry.Gap(adjustedMiddleGap))
+            add(LayoutEntry.Key(spaceKey.data, rightSpaceWidth + rightExtension))
+            addAll(rightEntries)
+        }
     }
 
     private fun computeRows(rows: List<Row>): List<LayoutRow> {
@@ -409,7 +459,8 @@ data class LayoutEngine(
                 row,
                 rowWidths[i],
                 height.toFloat(),
-                rows[i].splittable
+                rows[i].splittable,
+                rows[i].isBottomRow
             )
         }
 

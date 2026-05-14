@@ -88,4 +88,57 @@ class KeyboardLayoutSetV2Tests : AndroidTestCase() {
             leftKey.x - (downKey.x + downKey.totalWidth) >= totalWidth - splitLayoutWidth - 1
         )
     }
+
+    fun testSpacebarSplitsInSplitLayout() {
+        LayoutManager.init(context)
+
+        val totalWidth = 1000
+        val splitLayoutWidth = 600
+        val layoutSet = KeyboardLayoutSetV2(
+            context,
+            layoutParams.copy(
+                computedSize = SplitKeyboardSize(
+                    width = totalWidth,
+                    height = 1000,
+                    padding = Rect(),
+                    singleRowHeight = 250,
+                    splitLayoutWidth = splitLayoutWidth
+                )
+            )
+        )
+
+        val spaceKeys = layoutSet.getKeyboard(
+            KeyboardLayoutElement(
+                kind = KeyboardLayoutKind.Alphabet0,
+                page = KeyboardLayoutPage.Base
+            )
+        ).sortedKeys.filter { it.code == Constants.CODE_SPACE }
+
+        assertEquals(2, spaceKeys.size)
+
+        val leftSpaceKey = spaceKeys.minBy { it.x }
+        val rightSpaceKey = spaceKeys.maxBy { it.x }
+        val gapBetweenSpacebars = rightSpaceKey.x - (leftSpaceKey.x + leftSpaceKey.totalWidth)
+        val regularKeyWidth = splitLayoutWidth * 0.1f
+        val expectedLeftSpaceEnd = (splitLayoutWidth / 2.0f + regularKeyWidth * 1.5f).toInt()
+        val expectedRightSpaceStart = (totalWidth - splitLayoutWidth / 2.0f -
+                regularKeyWidth * 1.0f).toInt()
+        val expectedGapBetweenSpacebars = totalWidth - splitLayoutWidth -
+                (regularKeyWidth * (1.5f + 1.0f)).toInt()
+
+        assertEquals(leftSpaceKey.y, rightSpaceKey.y)
+        assertTrue(
+            "Left split spacebar should grow by 1.5 key widths",
+            leftSpaceKey.x + leftSpaceKey.totalWidth in
+                    (expectedLeftSpaceEnd - 1)..(expectedLeftSpaceEnd + 1)
+        )
+        assertTrue(
+            "Right split spacebar should grow by 1 key width",
+            rightSpaceKey.x in (expectedRightSpaceStart - 1)..(expectedRightSpaceStart + 1)
+        )
+        assertTrue(
+            "Split spacebar should leave the split keyboard center gap",
+            gapBetweenSpacebars in (expectedGapBetweenSpacebars - 1)..(expectedGapBetweenSpacebars + 1)
+        )
+    }
 }
