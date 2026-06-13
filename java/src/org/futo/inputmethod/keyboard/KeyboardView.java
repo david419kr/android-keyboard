@@ -99,6 +99,7 @@ public class KeyboardView extends View {
 
     // The maximum key label width in the proportion to the key width.
     private static final float MAX_LABEL_RATIO = 0.90f;
+    private static final float PHONE_LABEL_SCALE = 0.70f;
 
     // Main keyboard
     // TODO: Consider having a base keyboard object to make this @Nonnull
@@ -412,6 +413,10 @@ public class KeyboardView extends View {
         float labelX = centerX;
         float labelBaseline = centerY;
         final String label = kdc.getLabel();
+        final String hintLabel = kdc.getHintLabel();
+        final boolean isPhoneLayout = mKeyboard != null
+                && (mKeyboard.mId.mElementId == KeyboardId.ELEMENT_PHONE
+                || mKeyboard.mId.mElementId == KeyboardId.ELEMENT_PHONE_SYMBOLS);
         final Rect bgPadding = kdc.getBackgroundPadding();
 
         float keyHintPaddingX = mKeyHintLetterPadding;
@@ -424,6 +429,9 @@ public class KeyboardView extends View {
         if (label != null && icon == null) {
             paint.setTypeface(mDrawableProvider.selectKeyTypeface(key.selectTypeface(params)));
             paint.setTextSize(kdc.getTextSize());
+            if (isPhoneLayout) {
+                paint.setTextSize(paint.getTextSize() * PHONE_LABEL_SCALE);
+            }
             final float labelCharHeight = TypefaceUtils.getReferenceCharHeight(paint);
             final float labelCharWidth = TypefaceUtils.getReferenceCharWidth(paint);
 
@@ -471,9 +479,11 @@ public class KeyboardView extends View {
         }
 
         // Draw hint label.
-        final String hintLabel = kdc.getHintLabel();
         if (hintLabel != null) {
             paint.setTextSize(kdc.getHintSize());
+            if (isPhoneLayout) {
+                paint.setTextSize(paint.getTextSize() * PHONE_LABEL_SCALE);
+            }
             paint.setColor(kdc.getHintColor());
 
             // Bold explicit hints
