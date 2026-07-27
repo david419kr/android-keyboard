@@ -1464,14 +1464,6 @@ class JapaneseIME(val helper: IMEHelper) : IMEInterface {
         return true
     }
 
-    private fun fullWidthAlnumOrSpaceCodePoint(codePoint: Int): Int? = when(codePoint) {
-        in '0'.code .. '9'.code -> '０'.code + (codePoint - '0'.code)
-        in 'A'.code .. 'Z'.code -> 'Ａ'.code + (codePoint - 'A'.code)
-        in 'a'.code .. 'z'.code -> 'ａ'.code + (codePoint - 'a'.code)
-        Constants.CODE_SPACE -> '　'.code
-        else -> null
-    }
-
     private fun isQwertyAlphabetSubKeyboard(
         id: KeyboardId? = helper.keyboardSwitcher.keyboard?.mId
     ): Boolean {
@@ -1480,19 +1472,13 @@ class JapaneseIME(val helper: IMEHelper) : IMEInterface {
                 (layoutHint == "qwerty" || layoutHint == JAPANESE_MOAKI_IME_HINT)
     }
 
-    private fun maybeHandleJapaneseFullWidthAlnum(event: Event): Boolean {
+    private fun maybeHandleMoakiFullWidthNumber(event: Event): Boolean {
         val codePoint = event.mCodePoint
-        val fullWidthCodePoint = fullWidthAlnumOrSpaceCodePoint(codePoint) ?: return false
-
-        val shouldUseFullWidth = when {
-            layoutHint == JAPANESE_MOAKI_IME_HINT && codePoint in '0'.code .. '9'.code -> true
-            isQwertyAlphabetSubKeyboard() -> true
-            else -> false
+        if(layoutHint != JAPANESE_MOAKI_IME_HINT || codePoint !in '0'.code .. '9'.code) {
+            return false
         }
 
-        if(!shouldUseFullWidth) return false
-
-        sendMozcCodePoint(fullWidthCodePoint)
+        sendMozcCodePoint('０'.code + (codePoint - '0'.code))
         return true
     }
 
@@ -1528,7 +1514,7 @@ class JapaneseIME(val helper: IMEHelper) : IMEInterface {
                     return
                 }
 
-                if(maybeHandleJapaneseFullWidthAlnum(event)) {
+                if(maybeHandleMoakiFullWidthNumber(event)) {
                     return
                 }
 
