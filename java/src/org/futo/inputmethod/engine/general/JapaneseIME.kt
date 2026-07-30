@@ -739,7 +739,10 @@ class JapaneseIME(val helper: IMEHelper) : IMEInterface {
             selEnd = -1
         }
 
-        selectionTracker.onStartInput(selStart, selEnd, false)
+        // Some editors report the first composing span at a corrected offset after input starts.
+        // Let SelectionTracker recover when the span length still matches an expected render,
+        // instead of falsely resetting Mozc and committing only the first character.
+        selectionTracker.onStartInput(selStart, selEnd, true)
     }
 
     override fun onStartInput() {
