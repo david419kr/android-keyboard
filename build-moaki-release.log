@@ -1,0 +1,206 @@
+
+C:\Users\user\Documents\code\android-keyboard>if "Windows_NT" == "Windows_NT" setlocal
+
+C:\Users\user\Documents\code\android-keyboard>set DIRNAME=C:\Users\user\Documents\code\android-keyboard\ 
+
+C:\Users\user\Documents\code\android-keyboard>if "C:\Users\user\Documents\code\android-keyboard\" == "" set DIRNAME=. 
+
+C:\Users\user\Documents\code\android-keyboard>set APP_BASE_NAME=gradlew 
+
+C:\Users\user\Documents\code\android-keyboard>set APP_HOME=C:\Users\user\Documents\code\android-keyboard\ 
+
+C:\Users\user\Documents\code\android-keyboard>for %i in ("C:\Users\user\Documents\code\android-keyboard\") do set APP_HOME=%~fi 
+
+C:\Users\user\Documents\code\android-keyboard>set APP_HOME=C:\Users\user\Documents\code\android-keyboard\ 
+
+C:\Users\user\Documents\code\android-keyboard>set DEFAULT_JVM_OPTS="-Xmx64m" "-Xms64m" 
+
+C:\Users\user\Documents\code\android-keyboard>if defined JAVA_HOME goto findJavaFromJavaHome 
+
+C:\Users\user\Documents\code\android-keyboard>set JAVA_HOME=C:\Users\user\AppData\Roaming\Code\User\globalStorage\pleiades.java-extension-pack-jdk\java\21 
+
+C:\Users\user\Documents\code\android-keyboard>set JAVA_EXE=C:\Users\user\AppData\Roaming\Code\User\globalStorage\pleiades.java-extension-pack-jdk\java\21/bin/java.exe 
+
+C:\Users\user\Documents\code\android-keyboard>if exist "C:\Users\user\AppData\Roaming\Code\User\globalStorage\pleiades.java-extension-pack-jdk\java\21/bin/java.exe" goto execute 
+
+C:\Users\user\Documents\code\android-keyboard>set CLASSPATH=C:\Users\user\Documents\code\android-keyboard\\gradle\wrapper\gradle-wrapper.jar 
+
+C:\Users\user\Documents\code\android-keyboard>"C:\Users\user\AppData\Roaming\Code\User\globalStorage\pleiades.java-extension-pack-jdk\java\21/bin/java.exe" "-Xmx64m" "-Xms64m"   "-Dorg.gradle.appname=gradlew" -classpath "C:\Users\user\Documents\code\android-keyboard\\gradle\wrapper\gradle-wrapper.jar" org.gradle.wrapper.GradleWrapperMain assembleStableRelease 
+[0.008s][warning][cds] The shared archive file was created by a different version or build of HotSpot
+Starting a Gradle Daemon, 1 busy and 1 incompatible Daemons could not be reused, use --status for details
+
+> Configure project :
+VERSION_NAME env variable not set – falling back to git describe.
+VERSION_CODE env variable not set – falling back to git rev-list.
+keystore.properties not found, APK may not be signed
+crashreporting.properties not found, crash reporting will be disabled
+BRANCH_NAME env variable not set – falling back to git branch.
+BRANCH_NAME env variable not set – falling back to git branch.
+BRANCH_NAME env variable not set – falling back to git branch.
+versionCode = 11695
+versionName = 4
+
+> Task :prepareKoreanDictionaryResource UP-TO-DATE
+> Task :prepareResFilterCore UP-TO-DATE
+> Task :prepareResFilterCore-ign UP-TO-DATE
+> Task :prepareResFilterDevbuild UP-TO-DATE
+> Task :updateLocales
+> Task :preBuild
+> Task :prePlaystoreReleaseBuild
+> Task :configureCMakeRelWithDebInfo[arm64-v8a]
+> Task :buildCMakeRelWithDebInfo[arm64-v8a]
+> Task :configureCMakeRelWithDebInfo[armeabi-v7a]
+> Task :buildCMakeRelWithDebInfo[armeabi-v7a]
+> Task :configureCMakeRelWithDebInfo[x86]
+> Task :buildCMakeRelWithDebInfo[x86]
+> Task :configureCMakeRelWithDebInfo[x86_64]
+> Task :buildCMakeRelWithDebInfo[x86_64]
+> Task :preStableReleaseBuild
+> Task :mergeStableReleaseJniLibFolders UP-TO-DATE
+> Task :voiceinput-shared:prepareResFilterVoiceinput UP-TO-DATE
+> Task :voiceinput-shared:preBuild UP-TO-DATE
+> Task :voiceinput-shared:preReleaseBuild UP-TO-DATE
+> Task :voiceinput-shared:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :voiceinput-shared:mergeReleaseNativeLibs NO-SOURCE
+> Task :voiceinput-shared:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :mergeStableReleaseNativeLibs UP-TO-DATE
+> Task :stripStableReleaseDebugSymbols UP-TO-DATE
+> Task :extractStableReleaseNativeSymbolTables UP-TO-DATE
+> Task :mergeStableReleaseNativeDebugMetadata UP-TO-DATE
+> Task :voiceinput-shared:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :voiceinput-shared:dataBindingMergeDependencyArtifactsRelease UP-TO-DATE
+> Task :voiceinput-shared:generateReleaseResValues UP-TO-DATE
+> Task :voiceinput-shared:generateReleaseResources UP-TO-DATE
+> Task :voiceinput-shared:packageReleaseResources UP-TO-DATE
+> Task :voiceinput-shared:parseReleaseLocalResources UP-TO-DATE
+> Task :voiceinput-shared:dataBindingGenBaseClassesRelease UP-TO-DATE
+> Task :voiceinput-shared:mergeReleaseMlModels UP-TO-DATE
+> Task :voiceinput-shared:generateReleaseMlModelClass UP-TO-DATE
+> Task :voiceinput-shared:generateReleaseRFile UP-TO-DATE
+> Task :voiceinput-shared:compileReleaseKotlin UP-TO-DATE
+> Task :voiceinput-shared:javaPreCompileRelease UP-TO-DATE
+> Task :voiceinput-shared:compileReleaseJavaWithJavac NO-SOURCE
+> Task :voiceinput-shared:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :voiceinput-shared:exportReleaseConsumerProguardFiles UP-TO-DATE
+> Task :buildKotlinToolingMetadata UP-TO-DATE
+> Task :checkStableReleaseDuplicateClasses UP-TO-DATE
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataBindingMergeDependencyArtifactsStableRelease UP-TO-DATE
+> Task :generateStableReleaseResValues UP-TO-DATE
+> Task :generateStableReleaseResources UP-TO-DATE
+> Task :mergeStableReleaseResources UP-TO-DATE
+> Task :packageStableReleaseResources UP-TO-DATE
+> Task :parseStableReleaseLocalResources UP-TO-DATE
+> Task :dataBindingGenBaseClassesStableRelease UP-TO-DATE
+> Task :generateStableReleaseBuildConfig
+> Task :mergeStableReleaseMlModels UP-TO-DATE
+> Task :generateStableReleaseMlModelClass UP-TO-DATE
+> Task :voiceinput-shared:writeReleaseAarMetadata UP-TO-DATE
+> Task :checkStableReleaseAarMetadata UP-TO-DATE
+> Task :mapStableReleaseSourceSetPaths UP-TO-DATE
+> Task :createStableReleaseCompatibleScreenManifests
+> Task :extractDeepLinksStableRelease UP-TO-DATE
+> Task :voiceinput-shared:extractDeepLinksRelease UP-TO-DATE
+> Task :voiceinput-shared:processReleaseManifest UP-TO-DATE
+
+> Task :processStableReleaseMainManifest
+C:\Users\user\Documents\code\android-keyboard\java\stable\AndroidManifest.xml Warning:
+	uses-permission#android.permission.ACCESS_NETWORK_STATE was tagged at AndroidManifest.xml:0 to remove other declarations but no other declaration present
+C:\Users\user\Documents\code\android-keyboard\java\stable\AndroidManifest.xml Warning:
+	provider#org.acra.attachment.AcraContentProvider@android:authorities was tagged at AndroidManifest.xml:0 to replace other declarations but no other declaration present
+
+> Task :processStableReleaseManifest
+> Task :voiceinput-shared:compileReleaseLibraryResources UP-TO-DATE
+> Task :voiceinput-shared:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :javaPreCompileStableRelease UP-TO-DATE
+> Task :voiceinput-shared:prepareReleaseArtProfile UP-TO-DATE
+> Task :mergeStableReleaseArtProfile UP-TO-DATE
+> Task :voiceinput-shared:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :extractProguardFiles UP-TO-DATE
+> Task :voiceinput-shared:processReleaseJavaRes UP-TO-DATE
+> Task :mergeStableReleaseStartupProfile UP-TO-DATE
+> Task :mergeStableReleaseShaders UP-TO-DATE
+> Task :compileStableReleaseShaders NO-SOURCE
+> Task :generateStableReleaseAssets UP-TO-DATE
+> Task :voiceinput-shared:mergeReleaseShaders UP-TO-DATE
+> Task :voiceinput-shared:compileReleaseShaders NO-SOURCE
+> Task :voiceinput-shared:generateReleaseAssets UP-TO-DATE
+> Task :voiceinput-shared:mergeReleaseAssets UP-TO-DATE
+> Task :mergeStableReleaseAssets UP-TO-DATE
+> Task :compressStableReleaseAssets UP-TO-DATE
+> Task :extractStableReleaseVersionControlInfo UP-TO-DATE
+> Task :collectStableReleaseDependencies UP-TO-DATE
+> Task :sdkStableReleaseDependencyData UP-TO-DATE
+> Task :validateSigningStableRelease UP-TO-DATE
+> Task :writeStableReleaseAppMetadata UP-TO-DATE
+> Task :writeStableReleaseSigningConfigVersions UP-TO-DATE
+> Task :processStableReleaseManifestForPackage
+warn: removing resource org.futo.inputmethod.latin:string/action_clipboard_manager_error_clipboard_history_disabled_text without required default value.
+warn: removing resource org.futo.inputmethod.latin:string/credits_title without required default value.
+warn: removing resource org.futo.inputmethod.latin:string/morekey_settings_enable without required default value.
+warn: removing resource org.futo.inputmethod.latin:string/size_settings_subtitle without required default value.
+warn: removing resource org.futo.inputmethod.latin:string/typing_settings_auto_space_mode_auto without required default value.
+warn: removing resource org.futo.inputmethod.latin:string/typing_settings_auto_space_mode_legacy without required default value.
+warn: removing resource org.futo.inputmethod.latin:string/typing_settings_auto_space_mode_suggestions without required default value.
+warn: removing resource org.futo.inputmethod.latin:string/version_text without required default value.
+
+> Task :processStableReleaseResources
+> Task :optimizeStableReleaseResources
+
+> Task :compileStableReleaseKotlin
+w: file:///C:/Users/user/Documents/code/android-keyboard/java/src/org/futo/inputmethod/engine/general/GeneralIME.kt:428:81 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///C:/Users/user/Documents/code/android-keyboard/java/src/org/futo/inputmethod/latin/uix/UixManager.kt:1519:51 'static field VIBRATOR_SERVICE: String' is deprecated. Deprecated in Java.
+w: file:///C:/Users/user/Documents/code/android-keyboard/java/src/org/futo/inputmethod/latin/uix/UixManager.kt:1523:17 'fun vibrate(p0: Long): Unit' is deprecated. Deprecated in Java.
+w: file:///C:/Users/user/Documents/code/android-keyboard/java/src/org/futo/inputmethod/latin/uix/UixManager.kt:1651:17 'fun updateConfiguration(p0: Configuration!, p1: DisplayMetrics!): Unit' is deprecated. Deprecated in Java.
+w: file:///C:/Users/user/Documents/code/android-keyboard/java/src/org/futo/inputmethod/latin/uix/settings/Setup.kt:92:9 'fun LinearProgressIndicator(progress: Float, modifier: Modifier = ..., color: Color = ..., trackColor: Color = ..., strokeCap: StrokeCap = ...): Unit' is deprecated. Use the overload that takes `progress` as a lambda.
+w: file:///C:/Users/user/Documents/code/android-keyboard/java/src/org/futo/inputmethod/latin/uix/settings/pages/DevSettings.kt:119:17 'val LocalLifecycleOwner: ProvidableCompositionLocal<LifecycleOwner>' is deprecated. Moved to lifecycle-runtime-compose library in androidx.lifecycle.compose package.
+w: file:///C:/Users/user/Documents/code/android-keyboard/java/src/org/futo/inputmethod/latin/xlm/LanguageModelFacilitator.kt:63:9 'field mSourceDict: Dictionary!' is deprecated. Deprecated in Java.
+w: file:///C:/Users/user/Documents/code/android-keyboard/java/src/org/futo/inputmethod/latin/xlm/LanguageModelFacilitator.kt:63:30 'field mSourceDict: Dictionary!' is deprecated. Deprecated in Java.
+w: file:///C:/Users/user/Documents/code/android-keyboard/java/src/org/futo/inputmethod/latin/xlm/LanguageModelFacilitator.kt:80:9 'field mSourceDict: Dictionary!' is deprecated. Deprecated in Java.
+w: file:///C:/Users/user/Documents/code/android-keyboard/java/src/org/futo/inputmethod/latin/xlm/LanguageModelFacilitator.kt:94:9 'field mSourceDict: Dictionary!' is deprecated. Deprecated in Java.
+w: file:///C:/Users/user/Documents/code/android-keyboard/java/src/org/futo/inputmethod/latin/xlm/LanguageModelFacilitator.kt:253:24 'field mSourceDict: Dictionary!' is deprecated. Deprecated in Java.
+w: file:///C:/Users/user/Documents/code/android-keyboard/java/src/org/futo/inputmethod/latin/xlm/LanguageModelFacilitator.kt:276:73 'field mSourceDict: Dictionary!' is deprecated. Deprecated in Java.
+w: file:///C:/Users/user/Documents/code/android-keyboard/java/src/org/futo/inputmethod/latin/xlm/LanguageModelFacilitator.kt:349:25 'field mSourceDict: Dictionary!' is deprecated. Deprecated in Java.
+w: file:///C:/Users/user/Documents/code/android-keyboard/java/src/org/futo/inputmethod/latin/xlm/LanguageModelFacilitator.kt:387:123 'field mSourceDict: Dictionary!' is deprecated. Deprecated in Java.
+w: file:///C:/Users/user/Documents/code/android-keyboard/java/src/org/futo/inputmethod/updates/Update.kt:132:32 'val Icons.Filled.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowForward.
+w: file:///C:/Users/user/Documents/code/android-keyboard/java/src/org/futo/inputmethod/updates/Update.kt:141:32 'val Icons.Filled.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowForward.
+
+warning: [options] source value 8 is obsolete and will be removed in a future release
+warning: [options] target value 8 is obsolete and will be removed in a future release
+warning: [options] To suppress warnings about obsolete options, use -Xlint:-options.
+> Task :compileStableReleaseJavaWithJavac
+Java compiler version 21 has deprecated support for compiling with source/target version 8.
+Try one of the following options:
+    1. [Recommended] Use Java toolchain with a lower language version
+    2. Set a higher source/target version
+    3. Use a lower version of the JDK running the build (if you're not using Java toolchain)
+For more details on how to configure these settings, see https://developer.android.com/build/jdks.
+To suppress this warning, set android.javaCompile.suppressSourceTargetDeprecationWarning=true in gradle.properties.
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+3 warnings
+
+> Task :mergeStableReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :processStableReleaseJavaRes UP-TO-DATE
+> Task :mergeStableReleaseJavaResource UP-TO-DATE
+> Task :expandStableReleaseArtProfileWildcards
+> Task :minifyStableReleaseWithR8
+> Task :compileStableReleaseArtProfile
+> Task :packageStableRelease
+> Task :createStableReleaseApkListingFileRedirect
+> Task :assembleStableRelease
+
+[Incubating] Problems report is available at: file:///C:/Users/user/Documents/code/android-keyboard/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 2m 33s
+88 actionable tasks: 23 executed, 65 up-to-date
+
+C:\Users\user\Documents\code\android-keyboard>if "0" == "0" goto mainEnd 
+
+C:\Users\user\Documents\code\android-keyboard>if "Windows_NT" == "Windows_NT" endlocal

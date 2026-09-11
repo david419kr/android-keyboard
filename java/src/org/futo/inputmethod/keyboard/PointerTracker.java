@@ -399,78 +399,104 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
             return "\u3084"; // や
         case 0x3046: // う
             return "\u3086"; // ゆ
+        case 0x3048: // え
+            return "\u3044\u3047"; // いぇ
         case 0x304A: // お
             return "\u3088"; // よ
         case 0x304B: // か
             return "\u304D\u3083"; // きゃ
         case 0x304F: // く
             return "\u304D\u3085"; // きゅ
+        case 0x3051: // け
+            return "\u304D\u3047"; // きぇ
         case 0x3053: // こ
             return "\u304D\u3087"; // きょ
         case 0x304C: // が
             return "\u304E\u3083"; // ぎゃ
         case 0x3050: // ぐ
             return "\u304E\u3085"; // ぎゅ
+        case 0x3052: // げ
+            return "\u304E\u3047"; // ぎぇ
         case 0x3054: // ご
             return "\u304E\u3087"; // ぎょ
         case 0x3055: // さ
             return "\u3057\u3083"; // しゃ
         case 0x3059: // す
             return "\u3057\u3085"; // しゅ
+        case 0x305B: // せ
+            return "\u3057\u3047"; // しぇ
         case 0x305D: // そ
             return "\u3057\u3087"; // しょ
         case 0x3056: // ざ
             return "\u3058\u3083"; // じゃ
         case 0x305A: // ず
             return "\u3058\u3085"; // じゅ
+        case 0x305C: // ぜ
+            return "\u3058\u3047"; // じぇ
         case 0x305E: // ぞ
             return "\u3058\u3087"; // じょ
         case 0x305F: // た
             return "\u3061\u3083"; // ちゃ
         case 0x3064: // つ
             return "\u3061\u3085"; // ちゅ
+        case 0x3066: // て
+            return "\u3061\u3047"; // ちぇ
         case 0x3068: // と
             return "\u3061\u3087"; // ちょ
         case 0x3060: // だ
             return "\u3062\u3083"; // ぢゃ
         case 0x3065: // づ
             return "\u3062\u3085"; // ぢゅ
+        case 0x3067: // で
+            return "\u3062\u3047"; // ぢぇ
         case 0x3069: // ど
             return "\u3062\u3087"; // ぢょ
         case 0x306A: // な
             return "\u306B\u3083"; // にゃ
         case 0x306C: // ぬ
             return "\u306B\u3085"; // にゅ
+        case 0x306D: // ね
+            return "\u306B\u3047"; // にぇ
         case 0x306E: // の
             return "\u306B\u3087"; // にょ
         case 0x306F: // は
             return "\u3072\u3083"; // ひゃ
         case 0x3075: // ふ
             return "\u3072\u3085"; // ひゅ
+        case 0x3078: // へ
+            return "\u3072\u3047"; // ひぇ
         case 0x307B: // ほ
             return "\u3072\u3087"; // ひょ
         case 0x3070: // ば
             return "\u3073\u3083"; // びゃ
         case 0x3076: // ぶ
             return "\u3073\u3085"; // びゅ
+        case 0x3079: // べ
+            return "\u3073\u3047"; // びぇ
         case 0x307C: // ぼ
             return "\u3073\u3087"; // びょ
         case 0x3071: // ぱ
             return "\u3074\u3083"; // ぴゃ
         case 0x3077: // ぷ
             return "\u3074\u3085"; // ぴゅ
+        case 0x307A: // ぺ
+            return "\u3074\u3047"; // ぴぇ
         case 0x307D: // ぽ
             return "\u3074\u3087"; // ぴょ
         case 0x307E: // ま
             return "\u307F\u3083"; // みゃ
         case 0x3080: // む
             return "\u307F\u3085"; // みゅ
+        case 0x3081: // め
+            return "\u307F\u3047"; // みぇ
         case 0x3082: // も
             return "\u307F\u3087"; // みょ
         case 0x3089: // ら
             return "\u308A\u3083"; // りゃ
         case 0x308B: // る
             return "\u308A\u3085"; // りゅ
+        case 0x308C: // れ
+            return "\u308A\u3047"; // りぇ
         case 0x308D: // ろ
             return "\u308A\u3087"; // りょ
         default:
